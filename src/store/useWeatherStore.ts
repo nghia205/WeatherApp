@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { removeVietnameseTones } from '../utils/removeVietnameseTones';
 
 interface WeatherState {
   weather: any;
@@ -8,13 +9,14 @@ interface WeatherState {
   fetchWeather: (city: string) => Promise<void>;
 }
 
-const API_KEY = '31eb2ea5c88de466a01a8fd74fc0a788'; // chỉ đang dùng tạm, sau gọi qua proxy sever để ẩn API key
+const API_KEY = '66cbeb4d7d94488cc33990fe9a29a188'; // chỉ đang dùng tạm, sau gọi qua proxy sever để ẩn API key
 
 export const useWeatherStore = create<WeatherState>(set => ({
   weather: null,
   loading: false,
   error: null,
-  fetchWeather: async (city: string) => {
+  fetchWeather: async (cityInput: string) => {
+    const city = encodeURIComponent(removeVietnameseTones(cityInput));
     set({ loading: true, error: null });
     try {
       const response = await axios.get(
