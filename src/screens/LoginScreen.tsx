@@ -14,6 +14,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { apiMain } from '../services/api';
+import { useAuthStore } from '../store/useAuthStore';
 
 // 1. Định nghĩa schema validation với Zod
 const loginSchema = z.object({
@@ -30,6 +32,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginScreen() {
+  const { login } = useAuthStore();
   // 2. Khởi tạo react-hook-form
   const {
     control,
@@ -44,9 +47,17 @@ export default function LoginScreen() {
   });
 
   // 3. Hàm xử lý khi submit form hợp lệ
-  const onSubmit = (data: LoginFormValues) => {
-    console.log('Dữ liệu đăng nhập hợp lệ:', data);
-    // TODO: Gọi API đăng nhập tại đây
+  const onSubmit = async (data: LoginFormValues) => {
+    try {
+      const respone = await apiMain.post('/auth/login', {
+        email: data.email,
+        password: data.password,
+      });
+      const token = respone.data.data;
+      login(token, token.access_token, token.expires);
+    } catch (error) {
+      console.error('Error posting data:', error);
+    }
   };
 
   return (

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import axios from 'axios';
 import { removeVietnameseTones } from '../utils/removeVietnameseTones';
+import { apiWeather } from '../services/api';
 
 interface WeatherState {
   weather: any;
@@ -19,8 +19,8 @@ export const useWeatherStore = create<WeatherState>(set => ({
     const city = encodeURIComponent(removeVietnameseTones(cityInput));
     set({ loading: true, error: null });
     try {
-      const response = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&lang=vi&appid=${API_KEY}`,
+      const response = await apiWeather.get(
+        `/data/2.5/weather?q=${city}&units=metric&lang=vi&appid=${API_KEY}`,
       );
       set({ weather: response.data, loading: false });
     } catch (err) {
