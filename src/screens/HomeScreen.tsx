@@ -7,12 +7,13 @@ import {
   ActivityIndicator,
   StyleSheet,
   Keyboard,
+  Button,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useWeatherStore } from '../store/useWeatherStore';
 
-const Weather = () => {
-  const insets = useSafeAreaInsets();
+import { useWeatherStore } from '../store/useWeatherStore';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+const HomeScreen = ({ navigation }: any) => {
   const [cityInput, setCityInput] = useState('');
   const { weather, loading, error, fetchWeather } = useWeatherStore();
 
@@ -24,63 +25,57 @@ const Weather = () => {
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-        },
-      ]}
-    >
-      <Text style={styles.title}>🌤 Weather</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={[styles.container]}>
+        <Text style={styles.title}>🌤 Weather</Text>
 
-      {/* Search */}
-      <View style={styles.searchBox}>
-        <TextInput
-          style={styles.input}
-          placeholder="Nhập thành phố..."
-          placeholderTextColor="#999"
-          value={cityInput}
-          onSubmitEditing={handleSearch}
-          onChangeText={setCityInput}
-        />
-        <TouchableOpacity style={styles.button} onPress={handleSearch}>
-          <Text style={styles.buttonText}>Tìm</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Loading */}
-      {loading && <ActivityIndicator size="large" color="#fff" />}
-
-      {/* Error */}
-      {error && <Text style={styles.errorText}>{error}</Text>}
-
-      {/* Result */}
-      {weather && !loading && !error && (
-        <View style={styles.card}>
-          <Text style={styles.cityName}>{weather.name}</Text>
-
-          <Text style={styles.temp}>{Math.round(weather.main.temp)}°C</Text>
-
-          <Text style={styles.desc}>{weather.weather[0].description}</Text>
-
-          <View style={styles.extraInfo}>
-            <Text>💧 {weather.main.humidity}%</Text>
-            <Text>🌬 {weather.wind.speed} m/s</Text>
-          </View>
+        {/* Search */}
+        <View style={styles.searchBox}>
+          <TextInput
+            style={styles.input}
+            placeholder="Nhập thành phố..."
+            placeholderTextColor="#999"
+            value={cityInput}
+            onSubmitEditing={handleSearch}
+            onChangeText={setCityInput}
+          />
+          <TouchableOpacity style={styles.button} onPress={handleSearch}>
+            <Text style={styles.buttonText}>Tìm</Text>
+          </TouchableOpacity>
         </View>
-      )}
-    </View>
+
+        {/* Loading */}
+        {loading && <ActivityIndicator size="large" color="#fff" />}
+
+        {/* Error */}
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
+        {/* Result */}
+        {weather && !loading && !error && (
+          <View style={styles.card}>
+            <Text style={styles.cityName}>{weather.name}</Text>
+
+            <Text style={styles.temp}>{Math.round(weather.main.temp)}°C</Text>
+
+            <Text style={styles.desc}>{weather.weather[0].description}</Text>
+
+            <View style={styles.extraInfo}>
+              <Text>💧 {weather.main.humidity}%</Text>
+              <Text>🌬 {weather.wind.speed} m/s</Text>
+            </View>
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
   );
 };
 
-export default Weather;
+export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 10,
     backgroundColor: '#4facfe',
     justifyContent: 'flex-start',
   },
