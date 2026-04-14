@@ -17,7 +17,10 @@ export const ScreenContainer = ({
   const theme = useTheme();
 
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+    <SafeAreaView
+      edges={['top']}
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+    >
       <Surface
         style={[
           {

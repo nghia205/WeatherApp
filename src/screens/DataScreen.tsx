@@ -22,6 +22,7 @@ import {
   Surface,
 } from 'react-native-paper';
 import { useDataStore, Person, Job } from '../store/useDataStore';
+import { ScreenContainer } from '../components/ScreenContainer';
 
 const DataScreen = () => {
   const theme = useTheme();
@@ -136,9 +137,7 @@ const DataScreen = () => {
   const totalPages = Math.ceil(totalCount / limit);
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
+    <ScreenContainer paddingHorizontal={0}>
       {/* Header & Button Thêm mới */}
       <View style={styles.header}>
         <Text variant="headlineSmall" style={{ fontWeight: 'bold' }}>
@@ -299,7 +298,7 @@ const DataScreen = () => {
           </ScrollView>
         </Modal>
       </Portal>
-    </View>
+    </ScreenContainer>
   );
 };
 

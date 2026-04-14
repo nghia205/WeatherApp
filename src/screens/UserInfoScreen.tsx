@@ -10,6 +10,7 @@ import {
 } from 'react-native-paper';
 import { useUserStore } from '../store/useUserStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { ScreenContainer } from '../components/ScreenContainer';
 
 const UserInfoScreen = () => {
   const { profile, isLoading, error, fetchProfile } = useUserStore();
@@ -28,9 +29,7 @@ const UserInfoScreen = () => {
     : null;
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
+    <ScreenContainer paddingHorizontal={0} style={styles.container}>
       <Card style={styles.card}>
         <Card.Content style={styles.cardContent}>
           {isLoading ? (
@@ -77,7 +76,7 @@ const UserInfoScreen = () => {
       >
         Đăng xuất
       </Button>
-    </View>
+    </ScreenContainer>
   );
 };
 
