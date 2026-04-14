@@ -18,7 +18,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { apiMain } from '../services/api';
+import { authService } from '../services/authService';
 import { useAuthStore } from '../store/useAuthStore';
 import Toast from 'react-native-toast-message';
 
@@ -50,11 +50,11 @@ export default function LoginScreen() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      const respone = await apiMain.post('/auth/login', {
+      const responseData = await authService.login({
         email: data.email,
         password: data.password,
       });
-      const token = respone.data.data;
+      const token = responseData.data;
       login(token, token.access_token, token.expires);
     } catch (error) {
       Toast.show({

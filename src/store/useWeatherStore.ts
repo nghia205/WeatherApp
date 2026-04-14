@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { removeVietnameseTones } from '../utils/removeVietnameseTones';
-import { apiWeather } from '../services/api';
+import { weatherService } from '../services/weatherService';
 
 interface WeatherState {
   weather: any;
@@ -8,8 +8,6 @@ interface WeatherState {
   error: string | null;
   fetchWeather: (city: string) => Promise<void>;
 }
-
-const API_KEY = '66cbeb4d7d94488cc33990fe9a29a188'; // chỉ đang dùng tạm, sau gọi qua proxy sever để ẩn API key
 
 export const useWeatherStore = create<WeatherState>(set => ({
   weather: null,
@@ -19,10 +17,8 @@ export const useWeatherStore = create<WeatherState>(set => ({
     const city = encodeURIComponent(removeVietnameseTones(cityInput));
     set({ loading: true, error: null });
     try {
-      const response = await apiWeather.get(
-        `/data/2.5/weather?q=${city}&units=metric&lang=vi&appid=${API_KEY}`,
-      );
-      set({ weather: response.data, loading: false });
+      const data = await weatherService.getWeatherByCity(city);
+      set({ weather: data, loading: false });
     } catch (err) {
       set({ error: 'Không tìm thấy thành phố', loading: false });
     }
