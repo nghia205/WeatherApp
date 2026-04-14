@@ -6,15 +6,9 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
-import {
-  Surface,
-  Text,
-  TextInput,
-  Button,
-  HelperText,
-  useTheme,
-} from 'react-native-paper';
-import { useForm, Controller } from 'react-hook-form';
+import { Text, Button, useTheme } from 'react-native-paper';
+import { useForm } from 'react-hook-form';
+import { FormInput } from '../components/FormInput';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -103,51 +97,23 @@ export default function LoginScreen() {
             {/* Form */}
             <View style={{ marginBottom: 24 }}>
               {/* Field: Email */}
-              <View style={{ marginBottom: 4 }}>
-                <Controller
-                  control={control}
-                  name="email"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <TextInput
-                      mode="outlined"
-                      label="Email"
-                      placeholder="Nhập địa chỉ email"
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      onBlur={onBlur}
-                      onChangeText={onChange}
-                      value={value}
-                      error={!!errors.email}
-                    />
-                  )}
-                />
-                <HelperText type="error" visible={!!errors.email}>
-                  {errors.email?.message}
-                </HelperText>
-              </View>
+              <FormInput
+                control={control}
+                name="email"
+                label="Email"
+                placeholder="Nhập địa chỉ email"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
 
               {/* Field: Mật khẩu */}
-              <View style={{ marginBottom: 4 }}>
-                <Controller
-                  control={control}
-                  name="password"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <TextInput
-                      mode="outlined"
-                      label="Mật khẩu"
-                      placeholder="Nhập mật khẩu của bạn"
-                      secureTextEntry
-                      onBlur={onBlur}
-                      onChangeText={onChange}
-                      value={value}
-                      error={!!errors.password}
-                    />
-                  )}
-                />
-                <HelperText type="error" visible={!!errors.password}>
-                  {errors.password?.message}
-                </HelperText>
-              </View>
+              <FormInput
+                control={control}
+                name="password"
+                label="Mật khẩu"
+                placeholder="Nhập mật khẩu của bạn"
+                secureTextEntry
+              />
 
               {/* Forgot Password */}
               <View style={{ alignItems: 'flex-end', marginBottom: 24 }}>
