@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
+import { View, Keyboard } from 'react-native';
 import {
+  Surface,
   Text,
   TextInput,
-  TouchableOpacity,
-  View,
-  ActivityIndicator,
-  StyleSheet,
-  Keyboard,
   Button,
-} from 'react-native';
-
+  ActivityIndicator,
+  Card,
+  useTheme,
+} from 'react-native-paper';
 import { useWeatherStore } from '../store/useWeatherStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const HomeScreen = ({ navigation }: any) => {
   const [cityInput, setCityInput] = useState('');
   const { weather, loading, error, fetchWeather } = useWeatherStore();
+  const theme = useTheme();
 
   const handleSearch = () => {
     if (cityInput.trim()) {
@@ -25,137 +25,96 @@ const HomeScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={[styles.container]}>
-        <Text style={styles.title}>🌤 Weather</Text>
+    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+      <Surface
+        style={{
+          flex: 1,
+          paddingHorizontal: 16,
+          backgroundColor: theme.colors.background,
+        }}
+      >
+        <Text
+          variant="displayMedium"
+          style={{
+            textAlign: 'center',
+            marginVertical: 20,
+            fontWeight: 'bold',
+          }}
+        >
+          🌤 Weather
+        </Text>
 
         {/* Search */}
-        <View style={styles.searchBox}>
+        <View style={{ flexDirection: 'row', marginBottom: 20 }}>
           <TextInput
-            style={styles.input}
+            mode="outlined"
             placeholder="Nhập thành phố..."
-            placeholderTextColor="#999"
             value={cityInput}
             onSubmitEditing={handleSearch}
             onChangeText={setCityInput}
+            style={{ flex: 1, marginRight: 10 }}
           />
-          <TouchableOpacity style={styles.button} onPress={handleSearch}>
-            <Text style={styles.buttonText}>Tìm</Text>
-          </TouchableOpacity>
+          <Button
+            mode="contained"
+            onPress={handleSearch}
+            style={{ justifyContent: 'center' }}
+          >
+            Tìm
+          </Button>
         </View>
 
         {/* Loading */}
-        {loading && <ActivityIndicator size="large" color="#fff" />}
+        {loading && (
+          <ActivityIndicator size="large" style={{ marginTop: 20 }} />
+        )}
 
         {/* Error */}
-        {error && <Text style={styles.errorText}>{error}</Text>}
+        {error && (
+          <Text
+            variant="bodyLarge"
+            style={{
+              color: theme.colors.error,
+              textAlign: 'center',
+              marginTop: 10,
+            }}
+          >
+            {error}
+          </Text>
+        )}
 
         {/* Result */}
         {weather && !loading && !error && (
-          <View style={styles.card}>
-            <Text style={styles.cityName}>{weather.name}</Text>
-
-            <Text style={styles.temp}>{Math.round(weather.main.temp)}°C</Text>
-
-            <Text style={styles.desc}>{weather.weather[0].description}</Text>
-
-            <View style={styles.extraInfo}>
-              <Text>💧 {weather.main.humidity}%</Text>
-              <Text>🌬 {weather.wind.speed} m/s</Text>
-            </View>
-          </View>
+          <Card style={{ marginTop: 20, padding: 10 }}>
+            <Card.Content style={{ alignItems: 'center' }}>
+              <Text variant="headlineMedium" style={{ fontWeight: 'bold' }}>
+                {weather.name}
+              </Text>
+              <Text
+                variant="displayLarge"
+                style={{ color: theme.colors.primary, marginVertical: 10 }}
+              >
+                {Math.round(weather.main.temp)}°C
+              </Text>
+              <Text
+                variant="titleMedium"
+                style={{
+                  fontStyle: 'italic',
+                  marginBottom: 10,
+                  textTransform: 'capitalize',
+                }}
+              >
+                {weather.weather[0].description}
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 20, marginTop: 10 }}>
+                <Text variant="bodyLarge">💧 {weather.main.humidity}%</Text>
+                <Text variant="bodyLarge">🌬 {weather.wind.speed} m/s</Text>
+              </View>
+            </Card.Content>
+          </Card>
         )}
-      </View>
+      </Surface>
     </SafeAreaView>
   );
 };
 
 export default HomeScreen;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 10,
-    backgroundColor: '#4facfe',
-    justifyContent: 'flex-start',
-  },
-
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#fff',
-    marginVertical: 20,
-  },
-
-  searchBox: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-
-  input: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 30,
-    paddingHorizontal: 15,
-    height: 50,
-    fontSize: 16,
-  },
-
-  button: {
-    marginLeft: 10,
-    backgroundColor: '#222',
-    borderRadius: 30,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-  },
-
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-
-  card: {
-    marginTop: 40,
-    backgroundColor: '#ffffffcc',
-    borderRadius: 20,
-    padding: 25,
-    alignItems: 'center',
-
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-
-  cityName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-
-  temp: {
-    fontSize: 60,
-    fontWeight: '200',
-    color: '#ff7a00',
-  },
-
-  desc: {
-    fontSize: 18,
-    fontStyle: 'italic',
-    marginBottom: 10,
-    textTransform: 'capitalize',
-  },
-
-  extraInfo: {
-    flexDirection: 'row',
-    gap: 20,
-    marginTop: 10,
-  },
-
-  errorText: {
-    color: '#fff',
-    textAlign: 'center',
-    marginTop: 10,
-  },
-});
