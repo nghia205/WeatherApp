@@ -5,6 +5,7 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  StyleSheet,
 } from 'react-native';
 import { Text, Button, useTheme } from 'react-native-paper';
 import { useForm } from 'react-hook-form';
@@ -16,7 +17,7 @@ import { authService } from '../services/authService';
 import { useAuthStore } from '../store/useAuthStore';
 import Toast from 'react-native-toast-message';
 
-// 1. Định nghĩa schema validation với Zod
+// Định nghĩa schema validation với Zod
 const loginSchema = z.object({
   email: z
     .string({ message: 'Vui lòng nhập định dạng chữ' })
@@ -60,29 +61,26 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    // Kết hợp style tĩnh và style động (Theme)
+    <SafeAreaView
+      style={[styles.flex1, { backgroundColor: theme.colors.background }]}
+    >
       <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
+        style={[styles.flex1, { backgroundColor: theme.colors.background }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View
-            style={{
-              flex: 1,
-              paddingHorizontal: 24,
-              justifyContent: 'center',
-              backgroundColor: theme.colors.background,
-            }}
+            style={[
+              styles.container,
+              { backgroundColor: theme.colors.background },
+            ]}
           >
             {/* Header */}
-            <View style={{ marginBottom: 40 }}>
+            <View style={styles.headerContainer}>
               <Text
                 variant="headlineLarge"
-                style={{
-                  fontWeight: 'bold',
-                  marginBottom: 8,
-                  color: theme.colors.onSurface,
-                }}
+                style={[styles.title, { color: theme.colors.onSurface }]}
               >
                 Chào mừng trở lại!
               </Text>
@@ -95,8 +93,7 @@ export default function LoginScreen() {
             </View>
 
             {/* Form */}
-            <View style={{ marginBottom: 24 }}>
-              {/* Field: Email */}
+            <View style={styles.formContainer}>
               <FormInput
                 control={control}
                 name="email"
@@ -106,7 +103,6 @@ export default function LoginScreen() {
                 autoCapitalize="none"
               />
 
-              {/* Field: Mật khẩu */}
               <FormInput
                 control={control}
                 name="password"
@@ -116,7 +112,7 @@ export default function LoginScreen() {
               />
 
               {/* Forgot Password */}
-              <View style={{ alignItems: 'flex-end', marginBottom: 24 }}>
+              <View style={styles.forgotPasswordContainer}>
                 <Button mode="text" compact onPress={() => {}}>
                   Quên mật khẩu?
                 </Button>
@@ -126,22 +122,15 @@ export default function LoginScreen() {
               <Button
                 mode="contained"
                 onPress={handleSubmit(onSubmit)}
-                style={{ paddingVertical: 4, borderRadius: 12 }}
-                contentStyle={{ height: 50 }}
+                style={styles.submitButton}
+                contentStyle={styles.submitButtonContent}
               >
                 Đăng Nhập
               </Button>
             </View>
 
             {/* Footer */}
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginTop: 16,
-              }}
-            >
+            <View style={styles.footerContainer}>
               <Text
                 variant="bodyMedium"
                 style={{ color: theme.colors.onSurfaceVariant }}
@@ -158,3 +147,42 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
+
+// 2. Chuyển toàn bộ Layout tĩnh xuống đây
+const styles = StyleSheet.create({
+  flex1: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+  },
+  headerContainer: {
+    marginBottom: 40,
+  },
+  title: {
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  formContainer: {
+    marginBottom: 24,
+  },
+  forgotPasswordContainer: {
+    alignItems: 'flex-end',
+    marginBottom: 24,
+  },
+  submitButton: {
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  submitButtonContent: {
+    height: 50,
+  },
+  footerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+});

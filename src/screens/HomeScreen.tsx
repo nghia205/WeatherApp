@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Keyboard } from 'react-native';
+import { View, Keyboard, StyleSheet } from 'react-native'; // Thêm StyleSheet
 import {
   Text,
   TextInput,
@@ -9,7 +9,6 @@ import {
   useTheme,
 } from 'react-native-paper';
 import { useWeatherStore } from '../store/useWeatherStore';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenContainer } from '../components/ScreenContainer';
 
 const HomeScreen = ({ navigation }: any) => {
@@ -26,48 +25,37 @@ const HomeScreen = ({ navigation }: any) => {
 
   return (
     <ScreenContainer>
-      <Text
-        variant="displayMedium"
-        style={{
-          textAlign: 'center',
-          marginVertical: 20,
-          fontWeight: 'bold',
-        }}
-      >
+      <Text variant="displayMedium" style={styles.title}>
         🌤 Weather
       </Text>
 
       {/* Search */}
-      <View style={{ flexDirection: 'row', marginBottom: 20 }}>
+      <View style={styles.searchContainer}>
         <TextInput
           mode="outlined"
           placeholder="Nhập thành phố..."
           value={cityInput}
           onSubmitEditing={handleSearch}
           onChangeText={setCityInput}
-          style={{ flex: 1, marginRight: 10 }}
+          style={styles.searchInput}
         />
         <Button
           mode="contained"
           onPress={handleSearch}
-          style={{ justifyContent: 'center' }}
+          style={styles.searchButton}
         >
           Tìm
         </Button>
       </View>
 
       {/* Loading */}
-      {loading && <ActivityIndicator size="large" style={{ marginTop: 20 }} />}
+      {loading && <ActivityIndicator size="large" style={styles.loader} />}
 
       {/* Error */}
       {error && (
         <Text
           variant="bodyLarge"
-          style={{
-            color: theme.colors.error,
-            textAlign: 'center',
-            marginTop: 10,
-          }}
+          style={[styles.errorText, { color: theme.colors.error }]}
         >
           {error}
         </Text>
@@ -75,28 +63,25 @@ const HomeScreen = ({ navigation }: any) => {
 
       {/* Result */}
       {weather && !loading && !error && (
-        <Card style={{ marginTop: 20, padding: 10 }}>
-          <Card.Content style={{ alignItems: 'center' }}>
-            <Text variant="headlineMedium" style={{ fontWeight: 'bold' }}>
+        <Card style={styles.resultCard}>
+          <Card.Content style={styles.resultCardContent}>
+            <Text variant="headlineMedium" style={styles.cityName}>
               {weather.name}
             </Text>
+
+            {/* Vẫn giữ inline cho những style phụ thuộc trực tiếp vào Theme (Dynamic Value) */}
             <Text
               variant="displayLarge"
-              style={{ color: theme.colors.primary, marginVertical: 10 }}
+              style={[styles.temperature, { color: theme.colors.primary }]}
             >
               {Math.round(weather.main.temp)}°C
             </Text>
-            <Text
-              variant="titleMedium"
-              style={{
-                fontStyle: 'italic',
-                marginBottom: 10,
-                textTransform: 'capitalize',
-              }}
-            >
+
+            <Text variant="titleMedium" style={styles.description}>
               {weather.weather[0].description}
             </Text>
-            <View style={{ flexDirection: 'row', gap: 20, marginTop: 10 }}>
+
+            <View style={styles.detailsContainer}>
               <Text variant="bodyLarge">💧 {weather.main.humidity}%</Text>
               <Text variant="bodyLarge">🌬 {weather.wind.speed} m/s</Text>
             </View>
@@ -106,5 +91,55 @@ const HomeScreen = ({ navigation }: any) => {
     </ScreenContainer>
   );
 };
+
+// Chuẩn Production: Đưa hết định dạng tĩnh xuống đây
+const styles = StyleSheet.create({
+  title: {
+    textAlign: 'center',
+    marginVertical: 20,
+    fontWeight: 'bold',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  searchInput: {
+    flex: 1,
+    marginRight: 10,
+  },
+  searchButton: {
+    justifyContent: 'center',
+  },
+  loader: {
+    marginTop: 20,
+  },
+  errorText: {
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  resultCard: {
+    marginTop: 20,
+    padding: 10,
+  },
+  resultCardContent: {
+    alignItems: 'center',
+  },
+  cityName: {
+    fontWeight: 'bold',
+  },
+  temperature: {
+    marginVertical: 10,
+  },
+  description: {
+    fontStyle: 'italic',
+    marginBottom: 10,
+    textTransform: 'capitalize',
+  },
+  detailsContainer: {
+    flexDirection: 'row',
+    gap: 20,
+    marginTop: 10,
+  },
+});
 
 export default HomeScreen;
