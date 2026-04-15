@@ -93,51 +93,53 @@ export default function LoginScreen() {
               </View>
 
               {/* Form */}
-              <Card style={[styles.formCard, { backgroundColor: theme.dark ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.85)' }]} elevation={4}>
-                <Card.Content>
-                  <FormInput
-                    control={control}
-                    name="email"
-                    label="Email"
-                    placeholder="Nhập địa chỉ email"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
+              <View style={[styles.glassCard, { backgroundColor: theme.dark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)', borderColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)' }]}>
+                <FormInput
+                  control={control}
+                  name="email"
+                  label="Email"
+                  placeholder="Nhập địa chỉ email"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  left={<TextInput.Icon icon="email-outline" color={theme.colors.onSurfaceVariant} />}
+                />
 
-                  <View style={{ height: 8 }} />
+                <View style={{ height: 4 }} />
 
-                  <FormInput
-                    control={control}
-                    name="password"
-                    label="Mật khẩu"
-                    placeholder="Nhập mật khẩu của bạn"
-                    secureTextEntry={!showPassword}
-                    right={
-                      <TextInput.Icon
-                        icon={showPassword ? 'eye-off' : 'eye'}
-                        onPress={() => setShowPassword(!showPassword)}
-                      />
-                    }
-                  />
+                <FormInput
+                  control={control}
+                  name="password"
+                  label="Mật khẩu"
+                  placeholder="Nhập mật khẩu của bạn"
+                  secureTextEntry={!showPassword}
+                  left={<TextInput.Icon icon="lock-outline" color={theme.colors.onSurfaceVariant} />}
+                  right={
+                    <TextInput.Icon
+                      icon={showPassword ? 'eye-off' : 'eye'}
+                      onPress={() => setShowPassword(!showPassword)}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  }
+                />
 
-                  <View style={styles.forgotPasswordContainer}>
-                    <Button mode="text" compact onPress={() => {}} textColor={theme.colors.primary}>
-                      Quên mật khẩu?
-                    </Button>
-                  </View>
-
-                  <Button
-                    mode="contained"
-                    onPress={handleSubmit(onSubmit)}
-                    style={styles.submitButton}
-                    contentStyle={styles.submitButtonContent}
-                    loading={isSubmitting}
-                    disabled={isSubmitting}
-                  >
-                    Đăng Nhập
+                <View style={styles.forgotPasswordContainer}>
+                  <Button mode="text" compact onPress={() => {}} textColor={theme.colors.primary} labelStyle={{ fontWeight: '700' }}>
+                    Quên mật khẩu?
                   </Button>
-                </Card.Content>
-              </Card>
+                </View>
+
+                <Button
+                  mode="contained"
+                  onPress={handleSubmit(onSubmit)}
+                  style={[styles.submitButton, { shadowColor: theme.colors.primary }]}
+                  contentStyle={styles.submitButtonContent}
+                  labelStyle={styles.submitButtonLabel}
+                  loading={isSubmitting}
+                  disabled={isSubmitting}
+                >
+                  Đăng Nhập
+                </Button>
+              </View>
 
               {/* Footer */}
               <View style={styles.footerContainer}>
@@ -194,21 +196,38 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     letterSpacing: 0.5,
   },
-  formCard: {
-    borderRadius: 24,
+  glassCard: {
+    borderRadius: 32,
+    borderWidth: 1.5,
     marginBottom: 24,
-    paddingVertical: 8,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 24,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',
-    marginBottom: 20,
-    marginTop: -4,
+    marginBottom: 28,
+    marginTop: -8,
   },
   submitButton: {
-    borderRadius: 16,
+    borderRadius: 100,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
   },
   submitButtonContent: {
-    height: 52,
+    height: 56,
+  },
+  submitButtonLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   footerContainer: {
     flexDirection: 'row',

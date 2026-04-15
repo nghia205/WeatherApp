@@ -1,6 +1,6 @@
 import React from 'react';
-import { View } from 'react-native';
-import { TextInput, HelperText } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { TextInput, HelperText, useTheme } from 'react-native-paper';
 import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 
 interface FormInputProps<T extends FieldValues> {
@@ -12,6 +12,7 @@ interface FormInputProps<T extends FieldValues> {
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   right?: React.ReactNode;
+  left?: React.ReactNode;
 }
 
 export const FormInput = <T extends FieldValues>({
@@ -23,9 +24,12 @@ export const FormInput = <T extends FieldValues>({
   keyboardType = 'default',
   autoCapitalize = 'sentences',
   right,
+  left,
 }: FormInputProps<T>) => {
+  const theme = useTheme();
+
   return (
-    <View style={{ marginBottom: 4 }}>
+    <View style={styles.container}>
       <Controller
         control={control}
         name={name}
@@ -43,8 +47,11 @@ export const FormInput = <T extends FieldValues>({
               value={value as string}
               error={!!error}
               right={right}
+              left={left}
+              outlineStyle={{ borderRadius: 16 }}
+              style={{ backgroundColor: theme.dark ? 'rgba(15, 23, 42, 0.4)' : 'transparent' }}
             />
-            <HelperText type="error" visible={!!error}>
+            <HelperText type="error" visible={!!error} style={{ paddingHorizontal: 0 }}>
               {error?.message}
             </HelperText>
           </>
@@ -53,3 +60,9 @@ export const FormInput = <T extends FieldValues>({
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 4,
+  },
+});
