@@ -1,4 +1,8 @@
-import { NavigationContainer } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  DarkTheme,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
@@ -9,13 +13,16 @@ import {
 import Routes from './Routes';
 import { useAuthStore } from '../store/useAuthStore';
 import { useEffect } from 'react';
+import { useTheme } from 'react-native-paper';
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   const { user, token, tokenExpires, isAppLoading, setAppReady, logout } =
     useAuthStore();
-  const isDarkMode = useColorScheme() === 'dark';
+  const theme = useTheme();
+
+  const navigationTheme = theme.dark ? DarkTheme : DefaultTheme;
 
   useEffect(() => {
     const initApp = async () => {
@@ -43,12 +50,7 @@ const AppNavigator = () => {
 
   return (
     <>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor="transparent"
-        translucent={true}
-      />
-      <NavigationContainer>
+      <NavigationContainer theme={navigationTheme}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {user ? (
             // Luồng cho người ĐÃ ĐĂNG NHẬP

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,11 +15,11 @@ import {
   Portal,
   Modal,
   Menu,
-  DataTable,
   useTheme,
   ActivityIndicator,
   Divider,
   Surface,
+  IconButton,
 } from 'react-native-paper';
 import { useDataStore, Person, Job } from '../store/useDataStore';
 import { ScreenContainer } from '../components/ScreenContainer';
@@ -30,28 +30,21 @@ const DataScreen = () => {
   const {
     people,
     jobs,
-    page,
-    limit,
-    totalCount,
     isLoadingPeople,
     isLoadingJobs,
-    setPage,
-    setLimit,
+    isFetchingMore,
     setSearchName,
     setSelectedJobId,
     fetchJobs,
     fetchPeople,
+    fetchMorePeople,
     searchName,
   } = useDataStore();
 
-  // Local state cho debounce search
   const [localSearch, setLocalSearch] = useState('');
-
-  // Local state cho Menu (Select Job)
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedJobText, setSelectedJobText] = useState('Tất cả công việc');
 
-  // Local state cho Modal Form Add New
   const [modalVisible, setModalVisible] = useState(false);
   const [newName, setNewName] = useState('');
   const [newAge, setNewAge] = useState('');
@@ -59,9 +52,8 @@ const DataScreen = () => {
   useEffect(() => {
     fetchJobs();
     fetchPeople();
-  }, []); // Chỉ chạy lần đầu
+  }, [fetchJobs, fetchPeople]);
 
-  // Debounce search name
   useEffect(() => {
     if (localSearch === searchName) return;
     const handler = setTimeout(() => {
@@ -83,36 +75,41 @@ const DataScreen = () => {
 
   const renderPerson = ({ item }: { item: Person }) => {
     return (
-      <Card style={styles.card}>
+      <Card style={styles.card} mode="elevated" elevation={2}>
         <Card.Content>
-          <Text
-            variant="titleMedium"
-            style={{ fontWeight: 'bold', marginBottom: 4 }}
-          >
-            {item.name}
-          </Text>
-          <Text variant="bodyMedium" style={styles.textWrap}>
-            Tuổi: {item.age || 'Chưa cung cấp'}
-          </Text>
+          <View style={styles.cardHeaderRow}>
+            <View>
+              <Text variant="titleLarge" style={styles.personName}>
+                {item.name}
+              </Text>
+              <Text variant="bodyMedium" style={{ color: theme.colors.secondary }}>
+                Tuổi: {item.age || 'Chưa cung cấp'}
+              </Text>
+            </View>
+            <View style={[styles.avatarPlaceholder, { backgroundColor: theme.colors.primaryContainer }]}>
+               <Text style={{ color: theme.colors.onPrimaryContainer, fontWeight: 'bold' }}>
+                 {item.name ? item.name.charAt(0).toUpperCase() : '?'}
+               </Text>
+            </View>
+          </View>
 
           <Divider style={styles.divider} />
 
           {item.job && (
-            <View style={styles.jobContainer}>
-              <Text variant="labelLarge" style={{ fontWeight: 'bold' }}>
-                Thông tin công việc:
-              </Text>
-              <Text variant="bodyMedium" style={styles.textWrap}>
-                {item.job.title || item.job.name || 'Chưa có chức danh'}
-              </Text>
-              {item.job.description && (
-                <Text
-                  variant="bodySmall"
-                  style={[styles.textWrap, { marginTop: 4, opacity: 0.7 }]}
-                >
-                  {item.job.description}
-                </Text>
-              )}
+            <View style={[styles.jobContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
+              <View style={styles.jobRow}>
+                <IconButton icon="briefcase" size={20} iconColor={theme.colors.primary} style={styles.jobIcon} />
+                <View style={{ flex: 1 }}>
+                  <Text variant="labelLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurfaceVariant }}>
+                    {item.job.title || item.job.name || 'Chưa có chức danh'}
+                  </Text>
+                  {item.job.description && (
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.8, marginTop: 2 }}>
+                      {item.job.description}
+                    </Text>
+                  )}
+                </View>
+              </View>
             </View>
           )}
           <Image
@@ -125,34 +122,31 @@ const DataScreen = () => {
     );
   };
 
-  const itemsPerPageOptions = [10, 20, 50, 100];
-  const totalPages = Math.ceil(totalCount / limit);
-
   return (
     <ScreenContainer paddingHorizontal={0}>
-      {/* Header & Button Thêm mới */}
       <View style={styles.header}>
-        <Text variant="headlineSmall" style={{ fontWeight: 'bold' }}>
-          Dữ liệu People
+        <Text variant="headlineMedium" style={styles.headerTitle}>
+          Cộng đồng
         </Text>
         <Button
           mode="contained"
           icon="plus"
           onPress={() => setModalVisible(true)}
+          style={styles.addButton}
         >
-          Thêm mới
+          Thêm
         </Button>
       </View>
 
-      {/* Filter Panel */}
-      <Surface style={styles.filterPanel} elevation={1}>
+      <View style={styles.filterContainer}>
         <TextInput
-          label="Tìm theo tên..."
+          placeholder="Tìm theo tên..."
           value={localSearch}
           onChangeText={setLocalSearch}
           mode="outlined"
           style={styles.searchInput}
           left={<TextInput.Icon icon="magnify" />}
+          theme={{ roundness: 12 }}
         />
 
         <Menu
@@ -160,7 +154,7 @@ const DataScreen = () => {
           onDismiss={() => setMenuVisible(false)}
           anchor={
             <Button
-              mode="outlined"
+              mode="contained-tonal"
               onPress={() => setMenuVisible(true)}
               style={styles.menuAnchor}
               icon="chevron-down"
@@ -170,10 +164,7 @@ const DataScreen = () => {
             </Button>
           }
         >
-          <Menu.Item
-            onPress={() => handleJobSelect(undefined)}
-            title="Tất cả công việc"
-          />
+          <Menu.Item onPress={() => handleJobSelect(undefined)} title="Tất cả công việc" />
           <Divider />
           {jobs.map(job => (
             <Menu.Item
@@ -183,48 +174,37 @@ const DataScreen = () => {
             />
           ))}
         </Menu>
-      </Surface>
+      </View>
 
-      {/* List content */}
       {isLoadingPeople && people.length === 0 ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       ) : (
         <FlatList
           data={people}
-          keyExtractor={item => String(item.id)}
+          keyExtractor={(item, index) => item.id?.toString() || index.toString()}
           renderItem={renderPerson}
           contentContainerStyle={styles.listContainer}
+          onEndReached={fetchMorePeople}
+          onEndReachedThreshold={0.5}
           refreshing={isLoadingPeople && people.length > 0}
           onRefresh={() => fetchPeople()}
+          ListFooterComponent={
+            isFetchingMore ? (
+              <View style={{ paddingVertical: 20 }}>
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={styles.centerContainer}>
-              <Text>Không có dữ liệu</Text>
+              <Text style={{ color: theme.colors.outline }}>Không có dữ liệu</Text>
             </View>
           }
         />
       )}
 
-      {/* Pagination */}
-      <Surface elevation={2} style={styles.paginationContainer}>
-        <DataTable.Pagination
-          page={page - 1} // 0-indexed cho DataTable.Pagination
-          numberOfPages={totalPages}
-          onPageChange={pageIndex => setPage(pageIndex + 1)}
-          label={`${(page - 1) * limit + 1}-${Math.min(
-            page * limit,
-            totalCount,
-          )} của ${totalCount}`}
-          showFastPaginationControls
-          numberOfItemsPerPageList={itemsPerPageOptions}
-          numberOfItemsPerPage={limit}
-          onItemsPerPageChange={setLimit}
-          selectPageDropdownLabel={'Hiển thị'}
-        />
-      </Surface>
-
-      {/* Modal Add New */}
       <Portal>
         <Modal
           visible={modalVisible}
@@ -234,12 +214,13 @@ const DataScreen = () => {
             { backgroundColor: theme.colors.surface },
           ]}
         >
-          <ScrollView>
-            <Text
-              variant="titleLarge"
-              style={{ marginBottom: 16, fontWeight: 'bold' }}
-            >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text variant="headlineSmall" style={styles.modalTitle}>
               Thêm hồ sơ mới
+            </Text>
+            
+            <Text variant="bodyMedium" style={{ marginBottom: 20, color: theme.colors.outline }}>
+              Nhập thông tin chi tiết vào bên dưới
             </Text>
 
             <TextInput
@@ -248,6 +229,7 @@ const DataScreen = () => {
               value={newName}
               onChangeText={setNewName}
               style={styles.modalInput}
+              theme={{ roundness: 12 }}
             />
             <TextInput
               label="Tuổi"
@@ -256,19 +238,20 @@ const DataScreen = () => {
               onChangeText={setNewAge}
               keyboardType="numeric"
               style={styles.modalInput}
+              theme={{ roundness: 12 }}
             />
 
-            {/* Chỉ làm giao diện cho dropdown job */}
             <TextInput
               label="Công việc (chỉ giao diện)"
               mode="outlined"
               editable={false}
               right={<TextInput.Icon icon="menu-down" />}
               style={styles.modalInput}
+              theme={{ roundness: 12 }}
             />
 
             <View style={styles.modalActions}>
-              <Button mode="text" onPress={() => setModalVisible(false)}>
+              <Button mode="text" onPress={() => setModalVisible(false)} textColor={theme.colors.outline}>
                 Huỷ
               </Button>
               <Button
@@ -277,8 +260,9 @@ const DataScreen = () => {
                   Alert.alert('Chức năng thêm mới chỉ để hiển thị giao diện!');
                   setModalVisible(false);
                 }}
+                style={{ borderRadius: 12 }}
               >
-                Lưu
+                Lưu hồ sơ
               </Button>
             </View>
           </ScrollView>
@@ -289,50 +273,80 @@ const DataScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   header: {
-    padding: 16,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 20, // để tránh status bar nêú có
-  },
-  filterPanel: {
-    padding: 16,
+    marginTop: 24,
     marginBottom: 8,
+  },
+  headerTitle: {
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  addButton: {
+    borderRadius: 12,
+  },
+  filterContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   searchInput: {
     marginBottom: 12,
+    height: 52,
   },
   menuAnchor: {
     alignSelf: 'flex-start',
+    borderRadius: 12,
   },
   listContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
     paddingBottom: 24,
+    paddingTop: 8,
   },
   card: {
     marginBottom: 16,
-    borderRadius: 12,
+    borderRadius: 20,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  personName: {
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  avatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   divider: {
-    marginVertical: 12,
+    marginVertical: 16,
+    opacity: 0.5,
   },
   jobContainer: {
-    backgroundColor: 'rgba(0,0,0,0.03)',
-    padding: 12,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
   },
-  textWrap: {
-    flexShrink: 1,
+  jobRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  jobIcon: {
+    margin: 0,
+    marginRight: 8,
   },
   jobImage: {
     width: '100%',
-    height: 150,
-    marginTop: 12,
-    borderRadius: 8,
+    height: 160,
+    marginTop: 16,
+    borderRadius: 12,
   },
   centerContainer: {
     flex: 1,
@@ -340,14 +354,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
-  paginationContainer: {
-    paddingVertical: 8,
-  },
   modalCard: {
-    padding: 20,
+    padding: 24,
     margin: 20,
-    borderRadius: 12,
+    borderRadius: 24,
     maxHeight: '80%',
+  },
+  modalTitle: {
+    fontWeight: 'bold',
   },
   modalInput: {
     marginBottom: 16,
@@ -355,7 +369,7 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 8,
+    marginTop: 12,
     gap: 8,
   },
 });

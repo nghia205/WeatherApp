@@ -24,6 +24,7 @@ interface DataState {
   selectedJobId: string | undefined;
   isLoadingPeople: boolean;
   isLoadingJobs: boolean;
+  isFetchingMore: boolean;
   error: string | null;
 
   setPage: (page: number) => void;
@@ -32,6 +33,7 @@ interface DataState {
   setSelectedJobId: (id: string | undefined) => void;
   fetchJobs: () => Promise<void>;
   fetchPeople: () => Promise<void>;
+  fetchMorePeople: () => Promise<void>;
 }
 
 export const useDataStore = create<DataState>((set, get) => ({
@@ -44,6 +46,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   selectedJobId: undefined,
   isLoadingPeople: false,
   isLoadingJobs: false,
+  isFetchingMore: false,
   error: null,
 
   setPage: (page) => {
@@ -74,10 +77,10 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   fetchPeople: async () => {
-    set({ isLoadingPeople: true, error: null });
-    const { page, limit, selectedJobId, searchName } = get();
+    set({ isLoadingPeople: true, error: null, page: 1 });
+    const { limit, selectedJobId, searchName } = get();
     try {
-      const resp = await dataService.fetchPeople(page, limit, selectedJobId, searchName);
+      const resp = await dataService.fetchPeople(1, limit, selectedJobId, searchName);
       set({ 
         people: resp.data, 
         totalCount: resp.meta?.filter_count || 0,
@@ -85,6 +88,25 @@ export const useDataStore = create<DataState>((set, get) => ({
       });
     } catch (error: any) {
       set({ error: error?.message || 'Có lỗi xảy ra', isLoadingPeople: false });
+    }
+  },
+
+  fetchMorePeople: async () => {
+    const { page, limit, selectedJobId, searchName, people, totalCount, isFetchingMore } = get();
+    if (isFetchingMore || people.length >= totalCount) return;
+
+    set({ isFetchingMore: true, error: null });
+    const nextPage = page + 1;
+    try {
+      const resp = await dataService.fetchPeople(nextPage, limit, selectedJobId, searchName);
+      set({ 
+        people: [...people, ...resp.data], 
+        page: nextPage,
+        totalCount: resp.meta?.filter_count || 0,
+        isFetchingMore: false 
+      });
+    } catch (error: any) {
+      set({ error: error?.message || 'Có lỗi xảy ra', isFetchingMore: false });
     }
   },
 }));
