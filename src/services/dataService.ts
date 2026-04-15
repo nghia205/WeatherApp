@@ -9,7 +9,7 @@ export const dataService = {
     page: number,
     limit: number,
     jobId?: string,
-    searchName?: string
+    searchName?: string,
   ) => {
     const filterAnd: any[] = [];
 
@@ -18,7 +18,7 @@ export const dataService = {
     }
 
     if (searchName) {
-      filterAnd.push({ full_name: { _icontains: searchName } });
+      filterAnd.push({ name: { _icontains: searchName } });
     }
 
     const filterObj = filterAnd.length > 0 ? { _and: filterAnd } : {};
@@ -29,7 +29,7 @@ export const dataService = {
         page,
         limit,
         filter: JSON.stringify(filterObj),
-        meta: 'filter_count', // to get total count for pagination
+        meta: 'filter_count',
       },
     });
     return response.data;

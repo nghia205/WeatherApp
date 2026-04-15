@@ -41,6 +41,7 @@ const DataScreen = () => {
     setSelectedJobId,
     fetchJobs,
     fetchPeople,
+    searchName,
   } = useDataStore();
 
   // Local state cho debounce search
@@ -52,9 +53,8 @@ const DataScreen = () => {
 
   // Local state cho Modal Form Add New
   const [modalVisible, setModalVisible] = useState(false);
-  const [newFullName, setNewFullName] = useState('');
-  const [newEmail, setNewEmail] = useState('');
-  const [newPhone, setNewPhone] = useState('');
+  const [newName, setNewName] = useState('');
+  const [newAge, setNewAge] = useState('');
 
   useEffect(() => {
     fetchJobs();
@@ -63,11 +63,12 @@ const DataScreen = () => {
 
   // Debounce search name
   useEffect(() => {
+    if (localSearch === searchName) return;
     const handler = setTimeout(() => {
       setSearchName(localSearch);
     }, 500);
     return () => clearTimeout(handler);
-  }, [localSearch, setSearchName]);
+  }, [localSearch, searchName, setSearchName]);
 
   const handleJobSelect = (job?: Job) => {
     if (job) {
@@ -81,10 +82,6 @@ const DataScreen = () => {
   };
 
   const renderPerson = ({ item }: { item: Person }) => {
-    const jobImage = item.job?.image
-      ? `https://silvatek.vn:8080/assets/${item.job.image}`
-      : null;
-
     return (
       <Card style={styles.card}>
         <Card.Content>
@@ -92,13 +89,10 @@ const DataScreen = () => {
             variant="titleMedium"
             style={{ fontWeight: 'bold', marginBottom: 4 }}
           >
-            {item.full_name}
+            {item.name}
           </Text>
           <Text variant="bodyMedium" style={styles.textWrap}>
-            Email: {item.email}
-          </Text>
-          <Text variant="bodyMedium" style={styles.textWrap}>
-            SĐT: {item.phone || 'Chưa cung cấp'}
+            Tuổi: {item.age || 'Chưa cung cấp'}
           </Text>
 
           <Divider style={styles.divider} />
@@ -119,15 +113,13 @@ const DataScreen = () => {
                   {item.job.description}
                 </Text>
               )}
-              {jobImage ? (
-                <Image
-                  source={{ uri: jobImage }}
-                  style={styles.jobImage}
-                  resizeMode="cover"
-                />
-              ) : null}
             </View>
           )}
+          <Image
+            source={require('../assets/hue.jpg')}
+            style={styles.jobImage}
+            resizeMode="cover"
+          />
         </Card.Content>
       </Card>
     );
@@ -194,7 +186,7 @@ const DataScreen = () => {
       </Surface>
 
       {/* List content */}
-      {isLoadingPeople ? (
+      {isLoadingPeople && people.length === 0 ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" />
         </View>
@@ -204,6 +196,8 @@ const DataScreen = () => {
           keyExtractor={item => String(item.id)}
           renderItem={renderPerson}
           contentContainerStyle={styles.listContainer}
+          refreshing={isLoadingPeople && people.length > 0}
+          onRefresh={() => fetchPeople()}
           ListEmptyComponent={
             <View style={styles.centerContainer}>
               <Text>Không có dữ liệu</Text>
@@ -249,26 +243,18 @@ const DataScreen = () => {
             </Text>
 
             <TextInput
-              label="Họ và tên"
+              label="Tên"
               mode="outlined"
-              value={newFullName}
-              onChangeText={setNewFullName}
+              value={newName}
+              onChangeText={setNewName}
               style={styles.modalInput}
             />
             <TextInput
-              label="Email"
+              label="Tuổi"
               mode="outlined"
-              value={newEmail}
-              onChangeText={setNewEmail}
-              keyboardType="email-address"
-              style={styles.modalInput}
-            />
-            <TextInput
-              label="Số điện thoại"
-              mode="outlined"
-              value={newPhone}
-              onChangeText={setNewPhone}
-              keyboardType="phone-pad"
+              value={newAge}
+              onChangeText={setNewAge}
+              keyboardType="numeric"
               style={styles.modalInput}
             />
 
