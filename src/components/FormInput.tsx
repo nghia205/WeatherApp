@@ -11,6 +11,7 @@ interface FormInputProps<T extends FieldValues> {
   secureTextEntry?: boolean;
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  right?: React.ReactNode;
 }
 
 export const FormInput = <T extends FieldValues>({
@@ -21,6 +22,7 @@ export const FormInput = <T extends FieldValues>({
   secureTextEntry,
   keyboardType = 'default',
   autoCapitalize = 'sentences',
+  right,
 }: FormInputProps<T>) => {
   return (
     <View style={{ marginBottom: 4 }}>
@@ -40,6 +42,7 @@ export const FormInput = <T extends FieldValues>({
               onChangeText={onChange}
               value={value as string}
               error={!!error}
+              right={right}
             />
             <HelperText type="error" visible={!!error}>
               {error?.message}

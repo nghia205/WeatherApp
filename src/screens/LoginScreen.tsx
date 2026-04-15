@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   KeyboardAvoidingView,
@@ -8,7 +8,7 @@ import {
   StyleSheet,
   ImageBackground,
 } from 'react-native';
-import { Text, Button, Card, useTheme } from 'react-native-paper';
+import { Text, Button, Card, useTheme, TextInput } from 'react-native-paper';
 import { useForm } from 'react-hook-form';
 import { FormInput } from '../components/FormInput';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,6 +34,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginScreen() {
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuthStore();
   const theme = useTheme();
 
@@ -110,7 +111,13 @@ export default function LoginScreen() {
                     name="password"
                     label="Mật khẩu"
                     placeholder="Nhập mật khẩu của bạn"
-                    secureTextEntry
+                    secureTextEntry={!showPassword}
+                    right={
+                      <TextInput.Icon
+                        icon={showPassword ? 'eye-off' : 'eye'}
+                        onPress={() => setShowPassword(!showPassword)}
+                      />
+                    }
                   />
 
                   <View style={styles.forgotPasswordContainer}>
