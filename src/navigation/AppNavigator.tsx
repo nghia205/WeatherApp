@@ -4,16 +4,12 @@ import {
   DarkTheme,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import {
-  ActivityIndicator,
-  StatusBar,
-  useColorScheme,
-  View,
-} from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import Routes from './Routes';
 import { useAuthStore } from '../store/useAuthStore';
 import { useEffect } from 'react';
 import { useTheme } from 'react-native-paper';
+import { getValidToken } from '../utils/getValidToken';
 
 const Stack = createNativeStackNavigator();
 
@@ -33,8 +29,12 @@ const AppNavigator = () => {
       const currentTime = Date.now();
       // Phần này nên gọi lên api/me để check token expires
       if (currentTime > tokenExpires) {
-        logout();
+        try {
+          await getValidToken();
+        } catch (error) {}
       }
+
+      setAppReady();
     };
 
     initApp();

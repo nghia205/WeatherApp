@@ -9,14 +9,22 @@ interface User {
   name?: string;
 }
 
+interface LoginPayload {
+  user: User;
+  token: string;
+  tokenExpires: number;
+  refreshToken: string;
+}
+
 // Khai báo kiểu dữ liệu cho Store
 interface AuthState {
   user: User | null;
   token: string | null;
   isAppLoading: boolean;
   tokenExpires: number;
+  refreshToken: string | null;
 
-  login: (userData: User, token: string, tokenExpires: number) => void;
+  login: (payload: LoginPayload) => void;
   logout: () => void;
   setAppReady: () => void;
 }
@@ -28,11 +36,17 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAppLoading: true,
       tokenExpires: 0,
+      refreshToken: null,
 
       // Hàm gọi khi đăng nhập thành công
-      login: (userData, token, tokenExpires) => {
+      login: ({ user, token, tokenExpires, refreshToken }) => {
         const expirationTime = Date.now() + tokenExpires;
-        set({ user: userData, token: token, tokenExpires: expirationTime });
+        set({
+          user,
+          token,
+          tokenExpires: expirationTime,
+          refreshToken,
+        });
       },
 
       // Hàm gọi khi đăng xuất hoặc token hết hạn (được gọi từ axios interceptor)
@@ -52,6 +66,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         token: state.token,
         tokenExpires: state.tokenExpires,
+        refreshToken: state.refreshToken,
       }),
     },
   ),
