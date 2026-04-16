@@ -18,7 +18,8 @@ import { authService } from '../services/authService';
 import { useAuthStore } from '../store/useAuthStore';
 import Toast from 'react-native-toast-message';
 
-const BG_IMAGE_URL = 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1080&q=80';
+const BG_IMAGE_URL =
+  'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1080&q=80';
 
 // Định nghĩa schema validation với Zod
 const loginSchema = z.object({
@@ -44,7 +45,7 @@ export default function LoginScreen() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: 'user1@gmail.com', password: 'User1@1327' },
   });
 
   const onSubmit = async (data: LoginFormValues) => {
@@ -53,8 +54,13 @@ export default function LoginScreen() {
         email: data.email,
         password: data.password,
       });
-      const token = responseData.data;
-      login(token, token.access_token, token.expires);
+      const loginData = responseData.data;
+      login({
+        user: loginData,
+        token: loginData.access_token,
+        tokenExpires: loginData.expires,
+        refreshToken: loginData.refresh_token,
+      });
     } catch (error) {
       Toast.show({
         type: 'error',
@@ -64,7 +70,9 @@ export default function LoginScreen() {
     }
   };
 
-  const overlayColor = theme.dark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(255, 255, 255, 0.4)';
+  const overlayColor = theme.dark
+    ? 'rgba(15, 23, 42, 0.6)'
+    : 'rgba(255, 255, 255, 0.4)';
 
   return (
     <ImageBackground
@@ -81,19 +89,45 @@ export default function LoginScreen() {
             <View style={styles.container}>
               {/* Header */}
               <View style={styles.headerContainer}>
-                <View style={[styles.iconPlaceholder, { backgroundColor: theme.colors.primary }]}>
+                <View
+                  style={[
+                    styles.iconPlaceholder,
+                    { backgroundColor: theme.colors.primary },
+                  ]}
+                >
                   <Text style={styles.iconText}>🌤</Text>
                 </View>
-                <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onSurface }]}>
+                <Text
+                  variant="headlineLarge"
+                  style={[styles.title, { color: theme.colors.onSurface }]}
+                >
                   WeatherApp
                 </Text>
-                <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant, fontWeight: '500' }}>
+                <Text
+                  variant="bodyLarge"
+                  style={{
+                    color: theme.colors.onSurfaceVariant,
+                    fontWeight: '500',
+                  }}
+                >
                   Đăng nhập để xem thời tiết hôm nay
                 </Text>
               </View>
 
               {/* Form */}
-              <View style={[styles.glassCard, { backgroundColor: theme.dark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)', borderColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)' }]}>
+              <View
+                style={[
+                  styles.glassCard,
+                  {
+                    backgroundColor: theme.dark
+                      ? 'rgba(30, 41, 59, 0.8)'
+                      : 'rgba(255, 255, 255, 0.9)',
+                    borderColor: theme.dark
+                      ? 'rgba(255, 255, 255, 0.1)'
+                      : 'rgba(255, 255, 255, 0.8)',
+                  },
+                ]}
+              >
                 <FormInput
                   control={control}
                   name="email"
@@ -101,7 +135,12 @@ export default function LoginScreen() {
                   placeholder="Nhập địa chỉ email"
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  left={<TextInput.Icon icon="email-outline" color={theme.colors.onSurfaceVariant} />}
+                  left={
+                    <TextInput.Icon
+                      icon="email-outline"
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  }
                 />
 
                 <View style={{ height: 4 }} />
@@ -112,7 +151,12 @@ export default function LoginScreen() {
                   label="Mật khẩu"
                   placeholder="Nhập mật khẩu của bạn"
                   secureTextEntry={!showPassword}
-                  left={<TextInput.Icon icon="lock-outline" color={theme.colors.onSurfaceVariant} />}
+                  left={
+                    <TextInput.Icon
+                      icon="lock-outline"
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  }
                   right={
                     <TextInput.Icon
                       icon={showPassword ? 'eye-off' : 'eye'}
@@ -123,7 +167,13 @@ export default function LoginScreen() {
                 />
 
                 <View style={styles.forgotPasswordContainer}>
-                  <Button mode="text" compact onPress={() => {}} textColor={theme.colors.primary} labelStyle={{ fontWeight: '700' }}>
+                  <Button
+                    mode="text"
+                    compact
+                    onPress={() => {}}
+                    textColor={theme.colors.primary}
+                    labelStyle={{ fontWeight: '700' }}
+                  >
                     Quên mật khẩu?
                   </Button>
                 </View>
@@ -131,7 +181,10 @@ export default function LoginScreen() {
                 <Button
                   mode="contained"
                   onPress={handleSubmit(onSubmit)}
-                  style={[styles.submitButton, { shadowColor: theme.colors.primary }]}
+                  style={[
+                    styles.submitButton,
+                    { shadowColor: theme.colors.primary },
+                  ]}
                   contentStyle={styles.submitButtonContent}
                   labelStyle={styles.submitButtonLabel}
                   loading={isSubmitting}
@@ -143,10 +196,21 @@ export default function LoginScreen() {
 
               {/* Footer */}
               <View style={styles.footerContainer}>
-                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, fontWeight: '500' }}>
+                <Text
+                  variant="bodyMedium"
+                  style={{
+                    color: theme.colors.onSurfaceVariant,
+                    fontWeight: '500',
+                  }}
+                >
                   Bạn chưa có tài khoản?{' '}
                 </Text>
-                <Button mode="text" compact onPress={() => {}} textColor={theme.colors.primary}>
+                <Button
+                  mode="text"
+                  compact
+                  onPress={() => {}}
+                  textColor={theme.colors.primary}
+                >
                   Đăng ký ngay
                 </Button>
               </View>
