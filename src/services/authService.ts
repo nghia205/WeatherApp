@@ -7,7 +7,8 @@ export const authService = {
   },
   refreshToken: async (refreshToken: string | null) => {
     const response = await apiPublic.post('/auth/refresh', {
-      refreshToken,
+      refresh_token: refreshToken,
+      mode: 'json',
     });
     return response.data;
   },

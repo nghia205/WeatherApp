@@ -28,6 +28,7 @@ const getValidToken = async () => {
 
   try {
     const refreshToken = useAuthStore.getState().refreshToken;
+
     const responseData = await authService.refreshToken(refreshToken);
     const refreshTokenData = responseData.data;
 
@@ -39,10 +40,10 @@ const getValidToken = async () => {
       refreshToken: refreshTokenData.refresh_token,
     });
 
-    const newAccessToken = refreshTokenData.accessToken;
+    const newAccessToken = refreshTokenData.access_token;
     // Giải phóng hàng đợi, trả về token mới cho những người đang chờ
-    processQueue(null, newAccessToken.access_token);
-    return newAccessToken.access_token;
+    processQueue(null, newAccessToken);
+    return newAccessToken;
   } catch (error) {
     processQueue(error, null);
 
