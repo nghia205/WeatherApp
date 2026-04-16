@@ -1,27 +1,30 @@
 import React, { useState } from 'react';
 import {
-  View,
+  ImageBackground,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
   StyleSheet,
-  ImageBackground,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
-import { Text, Button, Card, useTheme, TextInput } from 'react-native-paper';
-import { useForm } from 'react-hook-form';
-import { FormInput } from '../components/FormInput';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { TextInput } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import Toast from 'react-native-toast-message';
+import * as z from 'zod';
+
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/useAuthStore';
-import Toast from 'react-native-toast-message';
+import { useAppTheme } from '../theme/useAppTheme';
+import { FormInput } from '../components/FormInput';
+import { AppButton } from '../components/ui/AppButton';
+import { AppText } from '../components/ui/AppText';
 
 const BG_IMAGE_URL =
   'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1080&q=80';
 
-// Định nghĩa schema validation với Zod
 const loginSchema = z.object({
   email: z
     .string({ message: 'Vui lòng nhập định dạng chữ' })
@@ -37,12 +40,12 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuthStore();
-  const theme = useTheme();
+  const theme = useAppTheme();
 
   const {
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: 'user1@gmail.com', password: 'User1@1327' },
@@ -54,7 +57,9 @@ export default function LoginScreen() {
         email: data.email,
         password: data.password,
       });
+
       const loginData = responseData.data;
+
       login({
         user: loginData,
         token: loginData.access_token,
@@ -70,24 +75,24 @@ export default function LoginScreen() {
     }
   };
 
-  const overlayColor = theme.dark
-    ? 'rgba(15, 23, 42, 0.6)'
-    : 'rgba(255, 255, 255, 0.4)';
-
   return (
     <ImageBackground
       source={{ uri: BG_IMAGE_URL }}
       style={styles.backgroundImage}
       blurRadius={Platform.OS === 'ios' ? 10 : 5}
     >
-      <SafeAreaView style={[styles.flex1, { backgroundColor: overlayColor }]}>
+      <SafeAreaView
+        style={[
+          styles.flex1,
+          { backgroundColor: theme.custom.semantic.alpha.overlay },
+        ]}
+      >
         <KeyboardAvoidingView
           style={styles.flex1}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.container}>
-              {/* Header */}
               <View style={styles.headerContainer}>
                 <View
                   style={[
@@ -95,36 +100,29 @@ export default function LoginScreen() {
                     { backgroundColor: theme.colors.primary },
                   ]}
                 >
-                  <Text style={styles.iconText}>🌤</Text>
+                  <AppText style={styles.iconText}>🌤</AppText>
                 </View>
-                <Text
+
+                <AppText
                   variant="headlineLarge"
-                  style={[styles.title, { color: theme.colors.onSurface }]}
+                  weight="heavy"
+                  style={styles.title}
                 >
                   WeatherApp
-                </Text>
-                <Text
-                  variant="bodyLarge"
-                  style={{
-                    color: theme.colors.onSurfaceVariant,
-                    fontWeight: '500',
-                  }}
-                >
+                </AppText>
+
+                <AppText variant="bodyLarge" tone="secondary" weight="medium">
                   Đăng nhập để xem thời tiết hôm nay
-                </Text>
+                </AppText>
               </View>
 
-              {/* Form */}
               <View
                 style={[
                   styles.glassCard,
                   {
-                    backgroundColor: theme.dark
-                      ? 'rgba(30, 41, 59, 0.8)'
-                      : 'rgba(255, 255, 255, 0.9)',
-                    borderColor: theme.dark
-                      ? 'rgba(255, 255, 255, 0.1)'
-                      : 'rgba(255, 255, 255, 0.8)',
+                    backgroundColor: theme.custom.semantic.alpha.glass,
+                    borderColor: theme.custom.semantic.alpha.glassBorder,
+                    borderRadius: theme.custom.metrics.radius.xxl,
                   },
                 ]}
               >
@@ -167,52 +165,41 @@ export default function LoginScreen() {
                 />
 
                 <View style={styles.forgotPasswordContainer}>
-                  <Button
-                    mode="text"
+                  <AppButton
+                    variant="ghost"
                     compact
+                    fullWidth={false}
                     onPress={() => {}}
-                    textColor={theme.colors.primary}
-                    labelStyle={{ fontWeight: '700' }}
                   >
                     Quên mật khẩu?
-                  </Button>
+                  </AppButton>
                 </View>
 
-                <Button
-                  mode="contained"
+                <AppButton
+                  variant="primary"
                   onPress={handleSubmit(onSubmit)}
-                  style={[
-                    styles.submitButton,
-                    { shadowColor: theme.colors.primary },
-                  ]}
-                  contentStyle={styles.submitButtonContent}
-                  labelStyle={styles.submitButtonLabel}
                   loading={isSubmitting}
                   disabled={isSubmitting}
+                  style={styles.submitButton}
+                  contentStyle={styles.submitButtonContent}
                 >
                   Đăng Nhập
-                </Button>
+                </AppButton>
               </View>
 
-              {/* Footer */}
               <View style={styles.footerContainer}>
-                <Text
-                  variant="bodyMedium"
-                  style={{
-                    color: theme.colors.onSurfaceVariant,
-                    fontWeight: '500',
-                  }}
-                >
-                  Bạn chưa có tài khoản?{' '}
-                </Text>
-                <Button
-                  mode="text"
+                <AppText variant="bodyMedium" tone="secondary" weight="medium">
+                  Bạn chưa có tài khoản?
+                </AppText>
+
+                <AppButton
+                  variant="ghost"
                   compact
+                  fullWidth={false}
                   onPress={() => {}}
-                  textColor={theme.colors.primary}
                 >
                   Đăng ký ngay
-                </Button>
+                </AppButton>
               </View>
             </View>
           </TouchableWithoutFeedback>
@@ -247,7 +234,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     elevation: 4,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -256,19 +242,16 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   title: {
-    fontWeight: '900',
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   glassCard: {
-    borderRadius: 32,
     borderWidth: 1.5,
     marginBottom: 24,
     paddingHorizontal: 24,
     paddingTop: 32,
     paddingBottom: 24,
     elevation: 8,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
@@ -279,19 +262,10 @@ const styles = StyleSheet.create({
     marginTop: -8,
   },
   submitButton: {
-    borderRadius: 100,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
+    borderRadius: 999,
   },
   submitButtonContent: {
     height: 56,
-  },
-  submitButtonLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
   },
   footerContainer: {
     flexDirection: 'row',

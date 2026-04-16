@@ -1,107 +1,118 @@
 import React, { useState } from 'react';
-import { View, Keyboard, StyleSheet, ScrollView } from 'react-native';
-import {
-  Text,
-  Searchbar,
-  ActivityIndicator,
-  Card,
-  useTheme,
-  IconButton,
-  Surface,
-} from 'react-native-paper';
+import { Keyboard, ScrollView, StyleSheet, View } from 'react-native';
+import { IconButton } from 'react-native-paper';
+
 import { useWeatherStore } from '../store/useWeatherStore';
 import { ScreenContainer } from '../components/ScreenContainer';
+import { AppCard } from '../components/ui/AppCard';
+import { AppDivider } from '../components/ui/AppDivider';
+import { AppSearchInput } from '../components/ui/AppSearchInput';
+import { AppText } from '../components/ui/AppText';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { ScreenError } from '../components/feedback/ScreenError';
+import { ScreenLoading } from '../components/feedback/ScreenLoading';
+import { useAppTheme } from '../theme/useAppTheme';
 
-const HomeScreen = ({ navigation }: any) => {
+const HomeScreen = () => {
   const [cityInput, setCityInput] = useState('');
   const { weather, loading, error, fetchWeather } = useWeatherStore();
-  const theme = useTheme();
+  const theme = useAppTheme();
 
   const handleSearch = () => {
     if (cityInput.trim()) {
       Keyboard.dismiss();
-      fetchWeather(cityInput);
+      fetchWeather(cityInput.trim());
     }
   };
 
   return (
     <ScreenContainer>
-      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        
-        <View style={styles.header}>
-          <Text variant="displaySmall" style={[styles.title, { color: theme.colors.primary }]}>
-            🌤 Thời tiết
-          </Text>
-          <Text variant="bodyMedium" style={{ color: theme.colors.secondary }}>
-            Tra cứu thời tiết mọi lúc, mọi nơi
-          </Text>
-        </View>
-
-        {/* Search */}
-        <Searchbar
-          placeholder="Nhập thành phố..."
-          onChangeText={setCityInput}
-          value={cityInput}
-          onSubmitEditing={handleSearch}
-          onIconPress={handleSearch}
-          style={styles.searchBar}
-          elevation={2}
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <SectionHeader
+          title="🌤 Thời tiết"
+          subtitle="Tra cứu thời tiết mọi lúc, mọi nơi"
+          align="center"
+          style={styles.header}
         />
 
-        {/* Loading */}
-        {loading && (
-          <View style={styles.centerContent}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={{ marginTop: 12, color: theme.colors.secondary }}>Đang tải dữ liệu...</Text>
-          </View>
-        )}
+        <AppSearchInput
+          placeholder="Nhập thành phố..."
+          value={cityInput}
+          onChangeText={setCityInput}
+          onSubmitEditing={handleSearch}
+          onIconPress={handleSearch}
+        />
 
-        {/* Error */}
-        {error && !loading && (
-          <Surface style={styles.errorSurface} elevation={1}>
-            <IconButton icon="alert-circle-outline" iconColor={theme.colors.error} size={32} />
-            <Text variant="titleMedium" style={[styles.errorText, { color: theme.colors.error }]}>
-              {error}
-            </Text>
-          </Surface>
-        )}
+        {loading ? <ScreenLoading message="Đang tải dữ liệu..." /> : null}
 
-        {/* Result */}
-        {weather && !loading && !error && (
-          <Card style={styles.resultCard} mode="elevated" elevation={4}>
-            <Card.Content style={styles.resultCardContent}>
-              <Text variant="headlineMedium" style={[styles.cityName, { color: theme.colors.onSurface }]}>
+        {!loading && error ? <ScreenError message={error} /> : null}
+
+        {weather && !loading && !error ? (
+          <AppCard variant="elevated" style={styles.resultCard}>
+            <View style={styles.resultCardContent}>
+              <AppText
+                variant="headlineMedium"
+                weight="heavy"
+                style={styles.cityName}
+              >
                 {weather.name}
-              </Text>
-              
-              <Text variant="bodyLarge" style={styles.description}>
+              </AppText>
+
+              <AppText
+                variant="bodyLarge"
+                tone="secondary"
+                style={styles.description}
+              >
                 {weather.weather[0].description}
-              </Text>
+              </AppText>
 
-              <Text variant="displayLarge" style={[styles.temperature, { color: theme.colors.primary }]}>
+              <AppText
+                variant="displayLarge"
+                weight="bold"
+                style={[styles.temperature, { color: theme.colors.primary }]}
+              >
                 {Math.round(weather.main.temp)}°C
-              </Text>
+              </AppText>
 
-              <View style={styles.divider} />
+              <AppDivider style={styles.divider} />
 
               <View style={styles.detailsContainer}>
                 <View style={styles.detailItem}>
-                  <IconButton icon="water-percent" iconColor={theme.colors.tertiary} size={28} />
-                  <Text variant="titleMedium">{weather.main.humidity}%</Text>
-                  <Text variant="labelMedium" style={{ color: theme.colors.outline }}>Độ ẩm</Text>
+                  <IconButton
+                    icon="water-percent"
+                    iconColor={theme.colors.tertiary}
+                    size={28}
+                  />
+                  <AppText variant="titleMedium" weight="bold">
+                    {weather.main.humidity}%
+                  </AppText>
+                  <AppText variant="labelMedium" tone="muted">
+                    Độ ẩm
+                  </AppText>
                 </View>
 
-                <View style={styles.verticalDivider} />
+                <AppDivider vertical style={styles.verticalDivider} />
 
                 <View style={styles.detailItem}>
-                  <IconButton icon="weather-windy" iconColor={theme.colors.tertiary} size={28} />
-                  <Text variant="titleMedium">{weather.wind.speed} m/s</Text>
-                  <Text variant="labelMedium" style={{ color: theme.colors.outline }}>Tốc độ gió</Text>
+                  <IconButton
+                    icon="weather-windy"
+                    iconColor={theme.colors.tertiary}
+                    size={28}
+                  />
+                  <AppText variant="titleMedium" weight="bold">
+                    {weather.wind.speed} m/s
+                  </AppText>
+                  <AppText variant="labelMedium" tone="muted">
+                    Tốc độ gió
+                  </AppText>
                 </View>
               </View>
-            </Card.Content>
-          </Card>
-        )}
+            </View>
+          </AppCard>
+        ) : null}
       </ScrollView>
     </ScreenContainer>
   );
@@ -114,36 +125,9 @@ const styles = StyleSheet.create({
   },
   header: {
     marginVertical: 24,
-    alignItems: 'center',
-  },
-  title: {
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  searchBar: {
-    marginBottom: 32,
-    borderRadius: 16,
-  },
-  centerContent: {
-    marginTop: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorSurface: {
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    backgroundColor: 'rgba(255, 0, 0, 0.05)',
-  },
-  errorText: {
-    textAlign: 'center',
-    marginTop: 8,
   },
   resultCard: {
-    borderRadius: 24,
-    overflow: 'hidden',
+    marginTop: 8,
   },
   resultCardContent: {
     alignItems: 'center',
@@ -151,25 +135,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   cityName: {
-    fontWeight: '900',
     letterSpacing: 0.5,
   },
   description: {
-    fontStyle: 'italic',
-    textTransform: 'capitalize',
     marginTop: 4,
-    opacity: 0.8,
+    opacity: 0.85,
+    textTransform: 'capitalize',
+    fontStyle: 'italic',
   },
   temperature: {
-    fontWeight: 'bold',
     marginVertical: 16,
   },
   divider: {
-    height: 1,
-    width: '100%',
-    backgroundColor: '#E0E0E0',
     marginVertical: 20,
-    opacity: 0.5,
   },
   detailsContainer: {
     flexDirection: 'row',
@@ -179,12 +157,10 @@ const styles = StyleSheet.create({
   },
   detailItem: {
     alignItems: 'center',
+    flex: 1,
   },
   verticalDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: '#E0E0E0',
-    opacity: 0.5,
+    marginHorizontal: 12,
   },
 });
 

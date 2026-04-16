@@ -1,37 +1,42 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View,
-  StyleSheet,
+  Alert,
   FlatList,
   Image,
   ScrollView,
-  Alert,
+  StyleSheet,
+  View,
 } from 'react-native';
 import {
-  Text,
-  TextInput,
   Card,
-  Button,
-  Portal,
-  Modal,
-  Menu,
-  useTheme,
-  ActivityIndicator,
   Divider,
-  Surface,
   IconButton,
+  List,
+  Menu,
+  Modal,
+  Portal,
+  TextInput,
 } from 'react-native-paper';
-import { useDataStore, Person, Job } from '../store/useDataStore';
+
+import { useDataStore, Job, Person } from '../store/useDataStore';
 import { ScreenContainer } from '../components/ScreenContainer';
+import { AppButton } from '../components/ui/AppButton';
+import { AppCard } from '../components/ui/AppCard';
+import { AppText } from '../components/ui/AppText';
+import { AppTextInput } from '../components/ui/AppTextInput';
+import { AppDivider } from '../components/ui/AppDivider';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { ScreenEmpty } from '../components/feedback/ScreenEmpty';
+import { ScreenLoading } from '../components/feedback/ScreenLoading';
+import { useAppTheme } from '../theme/useAppTheme';
 
 const DataScreen = () => {
-  const theme = useTheme();
+  const theme = useAppTheme();
 
   const {
     people,
     jobs,
     isLoadingPeople,
-    isLoadingJobs,
     isFetchingMore,
     setSearchName,
     setSelectedJobId,
@@ -56,9 +61,11 @@ const DataScreen = () => {
 
   useEffect(() => {
     if (localSearch === searchName) return;
+
     const handler = setTimeout(() => {
       setSearchName(localSearch);
     }, 500);
+
     return () => clearTimeout(handler);
   }, [localSearch, searchName, setSearchName]);
 
@@ -74,97 +81,138 @@ const DataScreen = () => {
   };
 
   const renderPerson = ({ item }: { item: Person }) => {
+    const name = item.name || 'Người dùng';
+    const firstChar = name.charAt(0).toUpperCase();
+
     return (
-      <Card style={styles.card} mode="elevated" elevation={2}>
+      <AppCard variant="elevated" style={styles.card}>
         <Card.Content>
           <View style={styles.cardHeaderRow}>
             <View>
-              <Text variant="titleLarge" style={styles.personName}>
-                {item.name}
-              </Text>
-              <Text variant="bodyMedium" style={{ color: theme.colors.secondary }}>
+              <AppText
+                variant="titleLarge"
+                weight="bold"
+                style={styles.personName}
+              >
+                {name}
+              </AppText>
+              <AppText variant="bodyMedium" tone="secondary">
                 Tuổi: {item.age || 'Chưa cung cấp'}
-              </Text>
+              </AppText>
             </View>
-            <View style={[styles.avatarPlaceholder, { backgroundColor: theme.colors.primaryContainer }]}>
-               <Text style={{ color: theme.colors.onPrimaryContainer, fontWeight: 'bold' }}>
-                 {item.name ? item.name.charAt(0).toUpperCase() : '?'}
-               </Text>
+
+            <View
+              style={[
+                styles.avatarPlaceholder,
+                { backgroundColor: theme.colors.primaryContainer },
+              ]}
+            >
+              <AppText
+                weight="bold"
+                style={{ color: theme.colors.onPrimaryContainer }}
+              >
+                {firstChar}
+              </AppText>
             </View>
           </View>
 
-          <Divider style={styles.divider} />
+          <AppDivider style={styles.divider} />
 
-          {item.job && (
-            <View style={[styles.jobContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
+          {item.job ? (
+            <View
+              style={[
+                styles.jobContainer,
+                { backgroundColor: theme.colors.surfaceVariant },
+              ]}
+            >
               <View style={styles.jobRow}>
-                <IconButton icon="briefcase" size={20} iconColor={theme.colors.primary} style={styles.jobIcon} />
+                <IconButton
+                  icon="briefcase"
+                  size={20}
+                  iconColor={theme.colors.primary}
+                  style={styles.jobIcon}
+                />
                 <View style={{ flex: 1 }}>
-                  <Text variant="labelLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurfaceVariant }}>
+                  <AppText
+                    variant="labelLarge"
+                    weight="bold"
+                    style={{ color: theme.colors.onSurfaceVariant }}
+                  >
                     {item.job.title || item.job.name || 'Chưa có chức danh'}
-                  </Text>
-                  {item.job.description && (
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.8, marginTop: 2 }}>
+                  </AppText>
+                  {item.job.description ? (
+                    <AppText
+                      variant="bodySmall"
+                      style={{
+                        color: theme.colors.onSurfaceVariant,
+                        opacity: 0.8,
+                        marginTop: 2,
+                      }}
+                    >
                       {item.job.description}
-                    </Text>
-                  )}
+                    </AppText>
+                  ) : null}
                 </View>
               </View>
             </View>
-          )}
+          ) : null}
+
           <Image
             source={require('../assets/hue.jpg')}
             style={styles.jobImage}
             resizeMode="cover"
           />
         </Card.Content>
-      </Card>
+      </AppCard>
     );
   };
 
   return (
     <ScreenContainer paddingHorizontal={0}>
       <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.headerTitle}>
-          Cộng đồng
-        </Text>
-        <Button
-          mode="contained"
-          icon="plus"
-          onPress={() => setModalVisible(true)}
-          style={styles.addButton}
-        >
-          Thêm
-        </Button>
+        <SectionHeader
+          title="Cộng đồng"
+          style={{ marginBottom: 8 }}
+          action={
+            <AppButton
+              variant="primary"
+              icon="plus"
+              onPress={() => setModalVisible(true)}
+              fullWidth={false}
+            >
+              Thêm
+            </AppButton>
+          }
+        />
       </View>
 
       <View style={styles.filterContainer}>
-        <TextInput
+        <AppTextInput
           placeholder="Tìm theo tên..."
           value={localSearch}
           onChangeText={setLocalSearch}
-          mode="outlined"
-          style={styles.searchInput}
           left={<TextInput.Icon icon="magnify" />}
-          theme={{ roundness: 12 }}
+          style={styles.searchInput}
         />
 
         <Menu
           visible={menuVisible}
           onDismiss={() => setMenuVisible(false)}
           anchor={
-            <Button
-              mode="contained-tonal"
+            <AppButton
+              variant="secondary"
               onPress={() => setMenuVisible(true)}
-              style={styles.menuAnchor}
+              fullWidth={false}
               icon="chevron-down"
-              contentStyle={{ flexDirection: 'row-reverse' }}
             >
               {selectedJobText}
-            </Button>
+            </AppButton>
           }
         >
-          <Menu.Item onPress={() => handleJobSelect(undefined)} title="Tất cả công việc" />
+          <Menu.Item
+            onPress={() => handleJobSelect(undefined)}
+            title="Tất cả công việc"
+          />
           <Divider />
           {jobs.map(job => (
             <Menu.Item
@@ -177,13 +225,13 @@ const DataScreen = () => {
       </View>
 
       {isLoadingPeople && people.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
+        <ScreenLoading message="Đang tải danh sách..." />
       ) : (
         <FlatList
           data={people}
-          keyExtractor={(item, index) => item.id?.toString() || index.toString()}
+          keyExtractor={(item, index) =>
+            item.id?.toString() || index.toString()
+          }
           renderItem={renderPerson}
           contentContainerStyle={styles.listContainer}
           onEndReached={fetchMorePeople}
@@ -191,17 +239,9 @@ const DataScreen = () => {
           refreshing={isLoadingPeople && people.length > 0}
           onRefresh={() => fetchPeople()}
           ListFooterComponent={
-            isFetchingMore ? (
-              <View style={{ paddingVertical: 20 }}>
-                <ActivityIndicator size="small" color={theme.colors.primary} />
-              </View>
-            ) : null
+            isFetchingMore ? <ScreenLoading message="Đang tải thêm..." /> : null
           }
-          ListEmptyComponent={
-            <View style={styles.centerContainer}>
-              <Text style={{ color: theme.colors.outline }}>Không có dữ liệu</Text>
-            </View>
-          }
+          ListEmptyComponent={<ScreenEmpty message="Không có dữ liệu" />}
         />
       )}
 
@@ -211,59 +251,63 @@ const DataScreen = () => {
           onDismiss={() => setModalVisible(false)}
           contentContainerStyle={[
             styles.modalCard,
-            { backgroundColor: theme.colors.surface },
+            {
+              backgroundColor: theme.colors.surface,
+              borderRadius: theme.custom.metrics.radius.xl,
+            },
           ]}
         >
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text variant="headlineSmall" style={styles.modalTitle}>
+            <AppText variant="headlineSmall" weight="bold">
               Thêm hồ sơ mới
-            </Text>
-            
-            <Text variant="bodyMedium" style={{ marginBottom: 20, color: theme.colors.outline }}>
-              Nhập thông tin chi tiết vào bên dưới
-            </Text>
+            </AppText>
 
-            <TextInput
+            <AppText
+              variant="bodyMedium"
+              tone="muted"
+              style={{ marginBottom: 20, marginTop: 6 }}
+            >
+              Nhập thông tin chi tiết vào bên dưới
+            </AppText>
+
+            <AppTextInput
               label="Tên"
-              mode="outlined"
               value={newName}
               onChangeText={setNewName}
-              style={styles.modalInput}
-              theme={{ roundness: 12 }}
             />
-            <TextInput
+
+            <AppTextInput
               label="Tuổi"
-              mode="outlined"
               value={newAge}
               onChangeText={setNewAge}
               keyboardType="numeric"
-              style={styles.modalInput}
-              theme={{ roundness: 12 }}
             />
 
-            <TextInput
+            <AppTextInput
               label="Công việc (chỉ giao diện)"
-              mode="outlined"
               editable={false}
               right={<TextInput.Icon icon="menu-down" />}
-              style={styles.modalInput}
-              theme={{ roundness: 12 }}
             />
 
             <View style={styles.modalActions}>
-              <Button mode="text" onPress={() => setModalVisible(false)} textColor={theme.colors.outline}>
+              <AppButton
+                variant="ghost"
+                onPress={() => setModalVisible(false)}
+                fullWidth={false}
+              >
                 Huỷ
-              </Button>
-              <Button
-                mode="contained"
+              </AppButton>
+
+              <AppButton
+                variant="primary"
                 onPress={() => {
                   Alert.alert('Chức năng thêm mới chỉ để hiển thị giao diện!');
                   setModalVisible(false);
                 }}
-                style={{ borderRadius: 12 }}
+                fullWidth={false}
               >
                 Lưu hồ sơ
-              </Button>
+              </AppButton>
             </View>
           </ScrollView>
         </Modal>
@@ -275,18 +319,8 @@ const DataScreen = () => {
 const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginTop: 24,
     marginBottom: 8,
-  },
-  headerTitle: {
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  addButton: {
-    borderRadius: 12,
   },
   filterContainer: {
     paddingHorizontal: 16,
@@ -294,11 +328,6 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     marginBottom: 12,
-    height: 52,
-  },
-  menuAnchor: {
-    alignSelf: 'flex-start',
-    borderRadius: 12,
   },
   listContainer: {
     paddingHorizontal: 16,
@@ -307,7 +336,6 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    borderRadius: 20,
   },
   cardHeaderRow: {
     flexDirection: 'row',
@@ -315,7 +343,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   personName: {
-    fontWeight: 'bold',
     marginBottom: 2,
   },
   avatarPlaceholder: {
@@ -327,7 +354,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     marginVertical: 16,
-    opacity: 0.5,
   },
   jobContainer: {
     paddingVertical: 12,
@@ -348,23 +374,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
     borderRadius: 12,
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
   modalCard: {
     padding: 24,
     margin: 20,
-    borderRadius: 24,
     maxHeight: '80%',
-  },
-  modalTitle: {
-    fontWeight: 'bold',
-  },
-  modalInput: {
-    marginBottom: 16,
   },
   modalActions: {
     flexDirection: 'row',
