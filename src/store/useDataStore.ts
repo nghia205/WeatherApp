@@ -3,14 +3,20 @@ import { dataService } from '../services/dataService';
 
 export interface Job {
   id: string | number;
-  [key: string]: any; // Tuỳ field cụ thể mà Directus trả về
+  name?: string;
+  title?: string;
+  description?: string;
+  image?: string;
+  [key: string]: any;
 }
 
 export interface Person {
   id: string | number;
-  full_name: string;
-  email: string;
-  job?: Job; // Relational data
+  name?: string;
+  full_name?: string;
+  email?: string;
+  age?: string | number;
+  job?: Job;
   [key: string]: any;
 }
 
@@ -26,6 +32,9 @@ interface DataState {
   isLoadingJobs: boolean;
   isFetchingMore: boolean;
   error: string | null;
+  peopleError: string | null;
+  jobsError: string | null;
+  loadMoreError: string | null;
 
   setPage: (page: number) => void;
   setLimit: (limit: number) => void;
@@ -35,6 +44,10 @@ interface DataState {
   fetchPeople: () => Promise<void>;
   fetchMorePeople: () => Promise<void>;
 }
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  return error instanceof Error ? error.message : fallback;
+};
 
 export const useDataStore = create<DataState>((set, get) => ({
   people: [],
@@ -48,65 +61,107 @@ export const useDataStore = create<DataState>((set, get) => ({
   isLoadingJobs: false,
   isFetchingMore: false,
   error: null,
+  peopleError: null,
+  jobsError: null,
+  loadMoreError: null,
 
-  setPage: (page) => {
+  setPage: page => {
     set({ page });
     get().fetchPeople();
   },
-  setLimit: (limit) => {
-    set({ limit, page: 1 }); // reset page when limit changes
+  setLimit: limit => {
+    set({ limit, page: 1 });
     get().fetchPeople();
   },
-  setSearchName: (searchName) => {
+  setSearchName: searchName => {
     set({ searchName, page: 1 });
     get().fetchPeople();
   },
-  setSelectedJobId: (selectedJobId) => {
+  setSelectedJobId: selectedJobId => {
     set({ selectedJobId, page: 1 });
     get().fetchPeople();
   },
 
   fetchJobs: async () => {
-    set({ isLoadingJobs: true, error: null });
+    set({ isLoadingJobs: true, jobsError: null });
+
     try {
       const resp = await dataService.fetchJobs();
       set({ jobs: resp.data, isLoadingJobs: false });
-    } catch (error: any) {
-      set({ error: error?.message || 'Có lỗi xảy ra', isLoadingJobs: false });
+    } catch (error) {
+      set({
+        jobsError: getErrorMessage(error, 'Unable to load jobs'),
+        isLoadingJobs: false,
+      });
     }
   },
 
   fetchPeople: async () => {
-    set({ isLoadingPeople: true, error: null, page: 1 });
+    set({
+      isLoadingPeople: true,
+      peopleError: null,
+      loadMoreError: null,
+      page: 1,
+    });
+
     const { limit, selectedJobId, searchName } = get();
+
     try {
-      const resp = await dataService.fetchPeople(1, limit, selectedJobId, searchName);
-      set({ 
-        people: resp.data, 
+      const resp = await dataService.fetchPeople(
+        1,
+        limit,
+        selectedJobId,
+        searchName,
+      );
+
+      set({
+        people: resp.data,
         totalCount: resp.meta?.filter_count || 0,
-        isLoadingPeople: false 
+        isLoadingPeople: false,
       });
-    } catch (error: any) {
-      set({ error: error?.message || 'Có lỗi xảy ra', isLoadingPeople: false });
+    } catch (error) {
+      set({
+        peopleError: getErrorMessage(error, 'Unable to load people'),
+        isLoadingPeople: false,
+      });
     }
   },
 
   fetchMorePeople: async () => {
-    const { page, limit, selectedJobId, searchName, people, totalCount, isFetchingMore } = get();
+    const {
+      page,
+      limit,
+      selectedJobId,
+      searchName,
+      people,
+      totalCount,
+      isFetchingMore,
+    } = get();
+
     if (isFetchingMore || people.length >= totalCount) return;
 
-    set({ isFetchingMore: true, error: null });
+    set({ isFetchingMore: true, loadMoreError: null });
     const nextPage = page + 1;
+
     try {
-      const resp = await dataService.fetchPeople(nextPage, limit, selectedJobId, searchName);
-      set({ 
-        people: [...people, ...resp.data], 
+      const resp = await dataService.fetchPeople(
+        nextPage,
+        limit,
+        selectedJobId,
+        searchName,
+      );
+
+      set({
+        people: [...people, ...resp.data],
         page: nextPage,
         totalCount: resp.meta?.filter_count || 0,
-        isFetchingMore: false 
+        isFetchingMore: false,
       });
-    } catch (error: any) {
-      set({ error: error?.message || 'Có lỗi xảy ra', isFetchingMore: false });
+    } catch (error) {
+      set({
+        loadMoreError: getErrorMessage(error, 'Unable to load more people'),
+        isFetchingMore: false,
+      });
     }
   },
 }));
