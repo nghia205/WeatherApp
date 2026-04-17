@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ImageSourcePropType } from 'react-native';
 import { StyleSheet, View } from 'react-native';
 import { Avatar } from 'react-native-paper';
 import { useAppTheme } from '../../theme/useAppTheme';
@@ -6,6 +7,7 @@ import { useAppTheme } from '../../theme/useAppTheme';
 type Props = {
   name?: string;
   uri?: string | null;
+  source?: ImageSourcePropType;
   size?: number;
   outlined?: boolean;
 };
@@ -13,15 +15,17 @@ type Props = {
 export const UserAvatar = ({
   name,
   uri,
+  source,
   size = 120,
   outlined = false,
 }: Props) => {
   const theme = useAppTheme();
   const label = (name?.trim()?.[0] || 'U').toUpperCase();
+  const imageSource = source || (uri ? { uri } : undefined);
 
   if (!outlined) {
-    return uri ? (
-      <Avatar.Image size={size} source={{ uri }} />
+    return imageSource ? (
+      <Avatar.Image size={size} source={imageSource} />
     ) : (
       <Avatar.Text
         size={size}
@@ -41,8 +45,8 @@ export const UserAvatar = ({
         },
       ]}
     >
-      {uri ? (
-        <Avatar.Image size={size} source={{ uri }} />
+      {imageSource ? (
+        <Avatar.Image size={size} source={imageSource} />
       ) : (
         <Avatar.Text
           size={size}

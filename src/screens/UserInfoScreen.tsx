@@ -14,7 +14,7 @@ import { ScreenLoading } from '../components/feedback/ScreenLoading';
 
 const UserInfoScreen = () => {
   const { profile, isLoading, error, fetchProfile } = useUserStore();
-  const { logout } = useAuthStore();
+  const { logout, token } = useAuthStore();
 
   useEffect(() => {
     fetchProfile();
@@ -27,6 +27,15 @@ const UserInfoScreen = () => {
   const avatarUrl = profile?.avatar
     ? `https://silvatek.vn:8080/assets/${profile.avatar}`
     : null;
+  const avatarSource =
+    avatarUrl && token
+      ? {
+          uri: avatarUrl,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      : undefined;
 
   return (
     <ScreenContainer paddingHorizontal={0} style={styles.container}>
@@ -35,15 +44,15 @@ const UserInfoScreen = () => {
         keyboardShouldPersistTaps="handled"
       >
         {isLoading ? (
-          <ScreenLoading message="Đang tải người dùng..." />
+          <ScreenLoading message="Loading user..." />
         ) : error ? (
-          <ScreenError message={error} />
+          <ScreenError message={error} onRetry={fetchProfile} />
         ) : profile ? (
           <>
             <View style={styles.header}>
               <UserAvatar
-                name={fullName || 'Người dùng'}
-                uri={avatarUrl}
+                name={fullName || 'User'}
+                source={avatarSource}
                 size={120}
                 outlined
               />
@@ -53,7 +62,7 @@ const UserInfoScreen = () => {
                 weight="bold"
                 style={styles.name}
               >
-                {fullName || 'Người dùng'}
+                {fullName || 'User'}
               </AppText>
 
               <AppText
@@ -68,11 +77,11 @@ const UserInfoScreen = () => {
             <Card style={styles.infoCard} mode="elevated" elevation={2}>
               <Card.Content style={styles.cardContent}>
                 <List.Section>
-                  <List.Subheader>Thông tin cá nhân</List.Subheader>
+                  <List.Subheader>Personal information</List.Subheader>
 
                   <List.Item
-                    title="Họ và tên"
-                    description={fullName || 'Chưa cập nhật'}
+                    title="Full name"
+                    description={fullName || 'Not updated'}
                     left={props => (
                       <List.Icon {...props} icon="account-outline" />
                     )}
@@ -98,11 +107,11 @@ const UserInfoScreen = () => {
               contentStyle={styles.logoutButtonContent}
               icon="logout"
             >
-              Đăng xuất
+              Sign out
             </AppButton>
           </>
         ) : (
-          <ScreenEmpty message="Không có dữ liệu" />
+          <ScreenEmpty message="No profile data" />
         )}
       </ScrollView>
     </ScreenContainer>

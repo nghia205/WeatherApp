@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { userService } from '../services/userService';
 
-// Interfaces cho User Profile theo Directus spec cơ bản
 export interface UserProfile {
   id: string;
   first_name: string;
@@ -17,7 +16,7 @@ interface UserState {
   fetchProfile: () => Promise<void>;
 }
 
-export const useUserStore = create<UserState>((set) => ({
+export const useUserStore = create<UserState>(set => ({
   profile: null,
   isLoading: false,
   error: null,
@@ -26,8 +25,11 @@ export const useUserStore = create<UserState>((set) => ({
     try {
       const response = await userService.fetchUserProfile();
       set({ profile: response.data, isLoading: false });
-    } catch (error: any) {
-      set({ error: error?.message || 'Có lỗi xảy ra', isLoading: false });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Unable to load user',
+        isLoading: false,
+      });
     }
   },
 }));
