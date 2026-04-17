@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  ImageBackground,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -22,17 +21,14 @@ import { FormInput } from '../components/FormInput';
 import { AppButton } from '../components/ui/AppButton';
 import { AppText } from '../components/ui/AppText';
 
-const BG_IMAGE_URL =
-  'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1080&q=80';
-
 const loginSchema = z.object({
   email: z
-    .string({ message: 'Vui lòng nhập định dạng chữ' })
-    .min(1, 'Email không được để trống')
-    .email('Email không đúng định dạng'),
+    .string({ message: 'Please enter text' })
+    .min(1, 'Email is required')
+    .email('Email format is invalid'),
   password: z
-    .string({ message: 'Vui lòng nhập định dạng chữ' })
-    .min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+    .string({ message: 'Please enter text' })
+    .min(6, 'Password must be at least 6 characters'),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -69,151 +65,138 @@ export default function LoginScreen() {
     } catch (error) {
       Toast.show({
         type: 'error',
-        text1: 'Lỗi đăng nhập',
-        text2: 'Tài khoản hoặc mật khẩu không chính xác',
+        text1: 'Sign-in failed',
+        text2: 'The email or password is incorrect',
       });
     }
   };
 
   return (
-    <ImageBackground
-      source={{ uri: BG_IMAGE_URL }}
-      style={styles.backgroundImage}
-      blurRadius={Platform.OS === 'ios' ? 10 : 5}
+    <SafeAreaView
+      style={[styles.flex1, { backgroundColor: theme.colors.background }]}
     >
-      <SafeAreaView
-        style={[
-          styles.flex1,
-          { backgroundColor: theme.custom.semantic.alpha.overlay },
-        ]}
+      <KeyboardAvoidingView
+        style={styles.flex1}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <KeyboardAvoidingView
-          style={styles.flex1}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.container}>
-              <View style={styles.headerContainer}>
-                <View
-                  style={[
-                    styles.iconPlaceholder,
-                    { backgroundColor: theme.colors.primary },
-                  ]}
-                >
-                  <AppText style={styles.iconText}>🌤</AppText>
-                </View>
-
-                <AppText
-                  variant="headlineLarge"
-                  weight="heavy"
-                  style={styles.title}
-                >
-                  WeatherApp
-                </AppText>
-
-                <AppText variant="bodyLarge" tone="secondary" weight="medium">
-                  Đăng nhập để xem thời tiết hôm nay
-                </AppText>
-              </View>
-
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.container}>
+            <View style={styles.headerContainer}>
               <View
                 style={[
-                  styles.glassCard,
-                  {
-                    backgroundColor: theme.custom.semantic.alpha.glass,
-                    borderColor: theme.custom.semantic.alpha.glassBorder,
-                    borderRadius: theme.custom.metrics.radius.xxl,
-                  },
+                  styles.iconPlaceholder,
+                  { backgroundColor: theme.colors.primary },
                 ]}
               >
-                <FormInput
-                  control={control}
-                  name="email"
-                  label="Email"
-                  placeholder="Nhập địa chỉ email"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  left={
-                    <TextInput.Icon
-                      icon="email-outline"
-                      color={theme.colors.onSurfaceVariant}
-                    />
-                  }
-                />
-
-                <View style={{ height: 4 }} />
-
-                <FormInput
-                  control={control}
-                  name="password"
-                  label="Mật khẩu"
-                  placeholder="Nhập mật khẩu của bạn"
-                  secureTextEntry={!showPassword}
-                  left={
-                    <TextInput.Icon
-                      icon="lock-outline"
-                      color={theme.colors.onSurfaceVariant}
-                    />
-                  }
-                  right={
-                    <TextInput.Icon
-                      icon={showPassword ? 'eye-off' : 'eye'}
-                      onPress={() => setShowPassword(!showPassword)}
-                      color={theme.colors.onSurfaceVariant}
-                    />
-                  }
-                />
-
-                <View style={styles.forgotPasswordContainer}>
-                  <AppButton
-                    variant="ghost"
-                    compact
-                    fullWidth={false}
-                    onPress={() => {}}
-                  >
-                    Quên mật khẩu?
-                  </AppButton>
-                </View>
-
-                <AppButton
-                  variant="primary"
-                  onPress={handleSubmit(onSubmit)}
-                  loading={isSubmitting}
-                  disabled={isSubmitting}
-                  style={styles.submitButton}
-                  contentStyle={styles.submitButtonContent}
-                >
-                  Đăng Nhập
-                </AppButton>
+                <AppText style={styles.iconText}>W</AppText>
               </View>
 
-              <View style={styles.footerContainer}>
-                <AppText variant="bodyMedium" tone="secondary" weight="medium">
-                  Bạn chưa có tài khoản?
-                </AppText>
+              <AppText
+                variant="headlineLarge"
+                weight="heavy"
+                style={styles.title}
+              >
+                WeatherApp
+              </AppText>
 
+              <AppText variant="bodyLarge" tone="secondary" weight="medium">
+                Sign in to view today's weather
+              </AppText>
+            </View>
+
+            <View
+              style={[
+                styles.formCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.custom.semantic.border.subtle,
+                  borderRadius: theme.custom.metrics.radius.xxl,
+                },
+              ]}
+            >
+              <FormInput
+                control={control}
+                name="email"
+                label="Email"
+                placeholder="Enter your email address"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                left={
+                  <TextInput.Icon
+                    icon="email-outline"
+                    color={theme.colors.onSurfaceVariant}
+                  />
+                }
+              />
+
+              <View style={styles.fieldSpacer} />
+
+              <FormInput
+                control={control}
+                name="password"
+                label="Password"
+                placeholder="Enter your password"
+                secureTextEntry={!showPassword}
+                left={
+                  <TextInput.Icon
+                    icon="lock-outline"
+                    color={theme.colors.onSurfaceVariant}
+                  />
+                }
+                right={
+                  <TextInput.Icon
+                    icon={showPassword ? 'eye-off' : 'eye'}
+                    onPress={() => setShowPassword(!showPassword)}
+                    color={theme.colors.onSurfaceVariant}
+                  />
+                }
+              />
+
+              <View style={styles.forgotPasswordContainer}>
                 <AppButton
                   variant="ghost"
                   compact
                   fullWidth={false}
                   onPress={() => {}}
                 >
-                  Đăng ký ngay
+                  Forgot password?
                 </AppButton>
               </View>
+
+              <AppButton
+                variant="primary"
+                onPress={handleSubmit(onSubmit)}
+                loading={isSubmitting}
+                disabled={isSubmitting}
+                style={styles.submitButton}
+                contentStyle={styles.submitButtonContent}
+              >
+                Sign in
+              </AppButton>
             </View>
-          </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </ImageBackground>
+
+            <View style={styles.footerContainer}>
+              <AppText variant="bodyMedium" tone="secondary" weight="medium">
+                Do not have an account?
+              </AppText>
+
+              <AppButton
+                variant="ghost"
+                compact
+                fullWidth={false}
+                onPress={() => {}}
+              >
+                Sign up
+              </AppButton>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  backgroundImage: {
-    flex: 1,
-    resizeMode: 'cover',
-  },
   flex1: {
     flex: 1,
   },
@@ -239,13 +222,15 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   iconText: {
+    color: '#FFFFFF',
     fontSize: 32,
+    fontWeight: '800',
   },
   title: {
     marginBottom: 8,
     letterSpacing: 0.5,
   },
-  glassCard: {
+  formCard: {
     borderWidth: 1.5,
     marginBottom: 24,
     paddingHorizontal: 24,
@@ -255,6 +240,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
+  },
+  fieldSpacer: {
+    height: 4,
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',

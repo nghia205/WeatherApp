@@ -1,9 +1,9 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { House, User, Database } from 'lucide-react-native';
+import { useTheme } from 'react-native-paper';
 import HomeScreen from '../screens/HomeScreen';
 import UserInfoScreen from '../screens/UserInfoScreen';
 import DataScreen from '../screens/DataScreen';
-import { House, User, Database } from 'lucide-react-native';
-import { useTheme } from 'react-native-paper';
 
 const Tab = createBottomTabNavigator();
 
@@ -27,7 +27,7 @@ function HomeTabs() {
         name="TabHome"
         component={HomeScreen}
         options={{
-          title: 'Trang Chủ',
+          title: 'Home',
           tabBarIcon: ({ color, size }) => <House color={color} size={size} />,
         }}
       />
@@ -35,7 +35,7 @@ function HomeTabs() {
         name="TabData"
         component={DataScreen}
         options={{
-          title: 'Dữ liệu',
+          title: 'Data',
           tabBarIcon: ({ color, size }) => (
             <Database color={color} size={size} />
           ),
@@ -45,7 +45,7 @@ function HomeTabs() {
         name="TabProfile"
         component={UserInfoScreen}
         options={{
-          title: 'Cá nhân',
+          title: 'Profile',
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
         }}
       />
