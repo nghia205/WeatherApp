@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Khai báo kiểu dữ liệu cho User
 interface User {
   id: string | number;
   email: string;
@@ -16,7 +15,6 @@ interface LoginPayload {
   refreshToken: string;
 }
 
-// Khai báo kiểu dữ liệu cho Store
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -38,7 +36,7 @@ export const useAuthStore = create<AuthState>()(
       tokenExpires: 0,
       refreshToken: null,
 
-      // Hàm gọi khi đăng nhập thành công
+      // Persists the authenticated session and stores the absolute token expiry time.
       login: ({ user, token, tokenExpires, refreshToken }) => {
         const expirationTime = Date.now() + tokenExpires;
         set({
@@ -49,12 +47,12 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      // Hàm gọi khi đăng xuất hoặc token hết hạn (được gọi từ axios interceptor)
+      // Clears local auth state after sign-out or a failed token refresh.
       logout: () => {
         set({ user: null, token: null });
       },
 
-      // Hàm gọi khi đã hoàn tất việc kiểm tra lúc app mới khởi động
+      // Unlocks navigation after the persisted session has been validated.
       setAppReady: () => {
         set({ isAppLoading: false });
       },

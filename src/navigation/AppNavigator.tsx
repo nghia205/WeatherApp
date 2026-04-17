@@ -4,17 +4,17 @@ import {
   DarkTheme,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator, View } from 'react-native';
-import Routes from './Routes';
-import { useAuthStore } from '../store/useAuthStore';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useEffect } from 'react';
 import { useTheme } from 'react-native-paper';
+import Routes from './Routes';
+import { useAuthStore } from '../store/useAuthStore';
 import { getValidToken } from '../utils/getValidToken';
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
-  const { user, token, tokenExpires, isAppLoading, setAppReady, logout } =
+  const { user, token, tokenExpires, isAppLoading, setAppReady } =
     useAuthStore();
   const theme = useTheme();
 
@@ -26,59 +26,63 @@ const AppNavigator = () => {
         setAppReady();
         return;
       }
-      const currentTime = Date.now();
-      // Phần này nên gọi lên api/me để check token expires
-      if (currentTime > tokenExpires) {
+
+      // Refresh an expired persisted token before unlocking protected routes.
+      if (Date.now() > tokenExpires) {
         try {
           await getValidToken();
-        } catch (error) {}
+        } catch {}
       }
 
       setAppReady();
     };
 
     initApp();
-  }, [token]);
+  }, [setAppReady, token, tokenExpires]);
 
   if (isAppLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#0000ff" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
 
   return (
-    <>
-      <NavigationContainer theme={navigationTheme}>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {user ? (
-            // Luồng cho người ĐÃ ĐĂNG NHẬP
-            <Stack.Group>
-              {Routes.filter(item => item.auth).map(item => (
-                <Stack.Screen
-                  key={item.name}
-                  name={item.name}
-                  component={item.component}
-                />
-              ))}
-            </Stack.Group>
-          ) : (
-            // Luồng cho người CHƯA ĐĂNG NHẬP
-            <Stack.Group>
-              {Routes.filter(item => !item.auth).map(item => (
-                <Stack.Screen
-                  key={item.name}
-                  name={item.name}
-                  component={item.component}
-                />
-              ))}
-            </Stack.Group>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </>
+    <NavigationContainer theme={navigationTheme}>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {user ? (
+          <Stack.Group>
+            {Routes.filter(item => item.auth).map(item => (
+              <Stack.Screen
+                key={item.name}
+                name={item.name}
+                component={item.component}
+              />
+            ))}
+          </Stack.Group>
+        ) : (
+          <Stack.Group>
+            {Routes.filter(item => !item.auth).map(item => (
+              <Stack.Screen
+                key={item.name}
+                name={item.name}
+                component={item.component}
+              />
+            ))}
+          </Stack.Group>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
 
 export default AppNavigator;

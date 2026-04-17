@@ -7,13 +7,11 @@ import axios, {
 import { useAuthStore } from '../store/useAuthStore';
 import { getValidToken } from '../utils/getValidToken';
 
-// Mở rộng interface config của Axios để thêm biến cờ _retry
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
 const withInterceptors = (axiosInstance: AxiosInstance) => {
-  // Request Interceptor: Dùng InternalAxiosRequestConfig
   axiosInstance.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
       const token = useAuthStore.getState().token;
@@ -25,13 +23,12 @@ const withInterceptors = (axiosInstance: AxiosInstance) => {
     },
   );
 
-  // Response Interceptor: Dùng AxiosResponse và AxiosError
   axiosInstance.interceptors.response.use(
     (response: AxiosResponse) => response,
     async (error: AxiosError) => {
       const originalRequest = error.config as CustomAxiosRequestConfig;
 
-      // Check originalRequest tồn tại phòng trường hợp lỗi mạng không có config
+      // Retry one failed authenticated request after refreshing the access token.
       if (
         error.response?.status === 401 &&
         originalRequest &&
@@ -41,7 +38,7 @@ const withInterceptors = (axiosInstance: AxiosInstance) => {
         try {
           const newToken = await getValidToken();
 
-          axiosInstance.defaults.headers.common['Authorization'] =
+          axiosInstance.defaults.headers.common.Authorization =
             'Bearer ' + newToken;
           originalRequest.headers.Authorization = 'Bearer ' + newToken;
 
@@ -58,7 +55,6 @@ const withInterceptors = (axiosInstance: AxiosInstance) => {
   return axiosInstance;
 };
 
-// 2. Tạo các Instances khác nhau tuỳ mục đích sử dụng
 const BASE_URL = 'https://silvatek.vn:8080';
 
 export const apiPublic = axios.create({
