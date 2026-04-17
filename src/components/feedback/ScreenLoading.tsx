@@ -8,7 +8,7 @@ type Props = {
   message?: string;
 };
 
-export const ScreenLoading = ({ message = 'Đang tải dữ liệu...' }: Props) => {
+export const ScreenLoading = ({ message = 'Loading data...' }: Props) => {
   const theme = useAppTheme();
 
   return (

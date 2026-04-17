@@ -3,19 +3,33 @@ import { StyleSheet } from 'react-native';
 import { TextInput, TextInputProps } from 'react-native-paper';
 import { useAppTheme } from '../../theme/useAppTheme';
 
-type Props = TextInputProps;
+type Variant = 'default' | 'search';
 
-export const AppTextInput = ({ style, outlineStyle, ...rest }: Props) => {
+type Props = TextInputProps & {
+  variant?: Variant;
+};
+
+export const AppTextInput = ({
+  variant = 'default',
+  style,
+  outlineStyle,
+  left,
+  ...rest
+}: Props) => {
   const theme = useAppTheme();
+  const isSearch = variant === 'search';
 
   return (
     <TextInput
       {...rest}
       mode="outlined"
-      style={[styles.input, style]}
+      left={isSearch ? left ?? <TextInput.Icon icon="magnify" /> : left}
+      style={[styles.input, isSearch ? styles.searchInput : null, style]}
       outlineStyle={[
         {
-          borderRadius: theme.custom.metrics.radius.sm,
+          borderRadius: isSearch
+            ? theme.custom.metrics.radius.md
+            : theme.custom.metrics.radius.sm,
         },
         outlineStyle,
       ]}
@@ -26,5 +40,8 @@ export const AppTextInput = ({ style, outlineStyle, ...rest }: Props) => {
 const styles = StyleSheet.create({
   input: {
     marginBottom: 16,
+  },
+  searchInput: {
+    marginBottom: 24,
   },
 });

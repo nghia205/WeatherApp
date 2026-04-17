@@ -6,7 +6,7 @@ type Props = {
   message?: string;
 };
 
-export const ScreenEmpty = ({ message = 'Không có dữ liệu' }: Props) => {
+export const ScreenEmpty = ({ message = 'No data available' }: Props) => {
   return (
     <View style={styles.container}>
       <AppText variant="bodyMedium" tone="muted">

@@ -1,16 +1,25 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { IconButton, Surface } from 'react-native-paper';
 import { AppText } from './AppText';
+import { AppButton } from './AppButton';
 import { useAppTheme } from '../../theme/useAppTheme';
 
 type Props = {
   type?: 'error' | 'info';
   title?: string;
   message: string;
+  actionLabel?: string;
+  onAction?: () => void;
 };
 
-export const InlineFeedback = ({ type = 'error', title, message }: Props) => {
+export const InlineFeedback = ({
+  type = 'error',
+  title,
+  message,
+  actionLabel,
+  onAction,
+}: Props) => {
   const theme = useAppTheme();
 
   const config =
@@ -57,6 +66,16 @@ export const InlineFeedback = ({ type = 'error', title, message }: Props) => {
       >
         {message}
       </AppText>
+      {actionLabel && onAction ? (
+        <AppButton
+          variant="secondary"
+          fullWidth={false}
+          onPress={onAction}
+          style={styles.action}
+        >
+          {actionLabel}
+        </AppButton>
+      ) : null}
     </Surface>
   );
 };
@@ -66,5 +85,8 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  action: {
+    marginTop: 12,
   },
 });
