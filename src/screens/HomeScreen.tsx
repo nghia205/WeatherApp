@@ -50,6 +50,7 @@ const HomeScreen = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <SectionHeader
           title="Weather"
