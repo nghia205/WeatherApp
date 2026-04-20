@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Card, Divider, List } from 'react-native-paper';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useUserStore } from '../store/useUserStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -12,9 +13,33 @@ import { ScreenEmpty } from '../components/feedback/ScreenEmpty';
 import { ScreenError } from '../components/feedback/ScreenError';
 import { ScreenLoading } from '../components/feedback/ScreenLoading';
 
+type ListIconProps = Parameters<
+  NonNullable<React.ComponentProps<typeof List.Item>['left']>
+>[0];
+
+const renderAccountIcon = (props: ListIconProps) => (
+  <List.Icon {...props} icon="account-outline" />
+);
+
+const renderEmailIcon = (props: ListIconProps) => (
+  <List.Icon {...props} icon="email-outline" />
+);
+
 const UserInfoScreen = () => {
-  const { profile, isLoading, error, fetchProfile } = useUserStore();
-  const { logout, token } = useAuthStore();
+  const { profile, isLoading, error, fetchProfile } = useUserStore(
+    useShallow(state => ({
+      profile: state.profile,
+      isLoading: state.isLoading,
+      error: state.error,
+      fetchProfile: state.fetchProfile,
+    })),
+  );
+  const { logout, token } = useAuthStore(
+    useShallow(state => ({
+      logout: state.logout,
+      token: state.token,
+    })),
+  );
 
   useEffect(() => {
     fetchProfile();
@@ -23,19 +48,21 @@ const UserInfoScreen = () => {
   const fullName = profile
     ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
     : '';
-
   const avatarUrl = profile?.avatar
     ? `https://silvatek.vn:8080/assets/${profile.avatar}`
     : null;
-  const avatarSource =
-    avatarUrl && token
-      ? {
-          uri: avatarUrl,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      : undefined;
+  const avatarSource = useMemo(
+    () =>
+      avatarUrl && token
+        ? {
+            uri: avatarUrl,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        : undefined,
+    [avatarUrl, token],
+  );
 
   return (
     <ScreenContainer paddingHorizontal={0} style={styles.container}>
@@ -82,9 +109,7 @@ const UserInfoScreen = () => {
                   <List.Item
                     title="Full name"
                     description={fullName || 'Not updated'}
-                    left={props => (
-                      <List.Icon {...props} icon="account-outline" />
-                    )}
+                    left={renderAccountIcon}
                   />
 
                   <Divider />
@@ -92,9 +117,7 @@ const UserInfoScreen = () => {
                   <List.Item
                     title="Email"
                     description={profile.email}
-                    left={props => (
-                      <List.Icon {...props} icon="email-outline" />
-                    )}
+                    left={renderEmailIcon}
                   />
                 </List.Section>
               </Card.Content>

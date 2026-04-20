@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Image, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { IconButton } from 'react-native-paper';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useWeatherStore } from '../store/useWeatherStore';
 import { ScreenContainer } from '../components/ScreenContainer';
@@ -26,17 +27,82 @@ const formatVisibility = (visibility?: number) => {
   return `${(visibility / 1000).toFixed(1)} km`;
 };
 
+type QuickCityButtonProps = {
+  city: string;
+  onSelect: (city: string) => void;
+};
+
+const QuickCityButton = ({ city, onSelect }: QuickCityButtonProps) => {
+  return (
+    <AppButton
+      variant="secondary"
+      compact
+      fullWidth={false}
+      onPress={() => onSelect(city)}
+    >
+      {city}
+    </AppButton>
+  );
+};
+
+type MetricTileProps = {
+  icon: string;
+  iconColor: string;
+  label: string;
+  value: string | number;
+  backgroundColor: string;
+};
+
+const MetricTile = ({
+  icon,
+  iconColor,
+  label,
+  value,
+  backgroundColor,
+}: MetricTileProps) => {
+  return (
+    <View style={[styles.metricTile, { backgroundColor }]}>
+      <IconButton
+        icon={icon}
+        iconColor={iconColor}
+        size={26}
+        style={styles.metricIcon}
+      />
+      <AppText variant="titleMedium" weight="bold">
+        {value}
+      </AppText>
+      <AppText variant="labelMedium" tone="muted">
+        {label}
+      </AppText>
+    </View>
+  );
+};
+
 const HomeScreen = () => {
   const [cityInput, setCityInput] = useState('');
-  const { weather, location, loading, error, fetchWeather } = useWeatherStore();
+  const { weather, location, loading, error, fetchWeather } = useWeatherStore(
+    useShallow(state => ({
+      weather: state.weather,
+      location: state.location,
+      loading: state.loading,
+      error: state.error,
+      fetchWeather: state.fetchWeather,
+    })),
+  );
   const theme = useAppTheme();
 
-  const handleSearch = (city = cityInput) => {
-    if (city.trim()) {
+  const handleSearch = (city?: string) => {
+    const nextCity = city ?? cityInput;
+
+    if (nextCity.trim()) {
       Keyboard.dismiss();
-      setCityInput(city);
-      fetchWeather(city.trim());
+      setCityInput(nextCity);
+      fetchWeather(nextCity.trim());
     }
+  };
+
+  const handleSubmitSearch = () => {
+    handleSearch();
   };
 
   const weatherIcon = weather?.weather?.[0]?.icon;
@@ -44,6 +110,7 @@ const HomeScreen = () => {
   const locationTitle = location
     ? `${location.name}${location.country ? `, ${location.country}` : ''}`
     : weather?.name;
+  const visibilityText = formatVisibility(weather?.visibility);
 
   return (
     <ScreenContainer>
@@ -72,7 +139,7 @@ const HomeScreen = () => {
             placeholder="Enter a city..."
             value={cityInput}
             onChangeText={setCityInput}
-            onSubmitEditing={() => handleSearch()}
+            onSubmitEditing={handleSubmitSearch}
             returnKeyType="search"
             style={styles.searchInput}
           />
@@ -80,7 +147,7 @@ const HomeScreen = () => {
           <AppButton
             variant="primary"
             icon="magnify"
-            onPress={() => handleSearch()}
+            onPress={handleSubmitSearch}
           >
             Search
           </AppButton>
@@ -88,15 +155,7 @@ const HomeScreen = () => {
 
         <View style={styles.quickCityRow}>
           {QUICK_CITIES.map(city => (
-            <AppButton
-              key={city}
-              variant="secondary"
-              compact
-              fullWidth={false}
-              onPress={() => handleSearch(city)}
-            >
-              {city}
-            </AppButton>
+            <QuickCityButton key={city} city={city} onSelect={handleSearch} />
           ))}
         </View>
 
@@ -105,7 +164,7 @@ const HomeScreen = () => {
         {!loading && error ? (
           <ScreenError
             message={error}
-            onRetry={() => handleSearch()}
+            onRetry={handleSubmitSearch}
             actionLabel="Try again"
           />
         ) : null}
@@ -164,85 +223,37 @@ const HomeScreen = () => {
             </AppCard>
 
             <View style={styles.metricGrid}>
-              <View
-                style={[
-                  styles.metricTile,
-                  { backgroundColor: theme.colors.surface },
-                ]}
-              >
-                <IconButton
-                  icon="water-percent"
-                  iconColor={theme.colors.tertiary}
-                  size={26}
-                  style={styles.metricIcon}
-                />
-                <AppText variant="titleMedium" weight="bold">
-                  {weather.main.humidity}%
-                </AppText>
-                <AppText variant="labelMedium" tone="muted">
-                  Humidity
-                </AppText>
-              </View>
+              <MetricTile
+                icon="water-percent"
+                iconColor={theme.colors.tertiary}
+                label="Humidity"
+                value={`${weather.main.humidity}%`}
+                backgroundColor={theme.colors.surface}
+              />
 
-              <View
-                style={[
-                  styles.metricTile,
-                  { backgroundColor: theme.colors.surface },
-                ]}
-              >
-                <IconButton
-                  icon="weather-windy"
-                  iconColor={theme.colors.tertiary}
-                  size={26}
-                  style={styles.metricIcon}
-                />
-                <AppText variant="titleMedium" weight="bold">
-                  {weather.wind.speed} m/s
-                </AppText>
-                <AppText variant="labelMedium" tone="muted">
-                  Wind
-                </AppText>
-              </View>
+              <MetricTile
+                icon="weather-windy"
+                iconColor={theme.colors.tertiary}
+                label="Wind"
+                value={`${weather.wind.speed} m/s`}
+                backgroundColor={theme.colors.surface}
+              />
 
-              <View
-                style={[
-                  styles.metricTile,
-                  { backgroundColor: theme.colors.surface },
-                ]}
-              >
-                <IconButton
-                  icon="gauge"
-                  iconColor={theme.colors.tertiary}
-                  size={26}
-                  style={styles.metricIcon}
-                />
-                <AppText variant="titleMedium" weight="bold">
-                  {weather.main.pressure}
-                </AppText>
-                <AppText variant="labelMedium" tone="muted">
-                  Pressure
-                </AppText>
-              </View>
+              <MetricTile
+                icon="gauge"
+                iconColor={theme.colors.tertiary}
+                label="Pressure"
+                value={weather.main.pressure}
+                backgroundColor={theme.colors.surface}
+              />
 
-              <View
-                style={[
-                  styles.metricTile,
-                  { backgroundColor: theme.colors.surface },
-                ]}
-              >
-                <IconButton
-                  icon="eye-outline"
-                  iconColor={theme.colors.tertiary}
-                  size={26}
-                  style={styles.metricIcon}
-                />
-                <AppText variant="titleMedium" weight="bold">
-                  {formatVisibility(weather.visibility)}
-                </AppText>
-                <AppText variant="labelMedium" tone="muted">
-                  Visibility
-                </AppText>
-              </View>
+              <MetricTile
+                icon="eye-outline"
+                iconColor={theme.colors.tertiary}
+                label="Visibility"
+                value={visibilityText}
+                backgroundColor={theme.colors.surface}
+              />
             </View>
 
             <AppDivider style={styles.divider} />

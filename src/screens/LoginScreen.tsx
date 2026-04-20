@@ -33,9 +33,11 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+const noop = () => {};
+
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuthStore();
+  const login = useAuthStore(state => state.login);
   const theme = useAppTheme();
 
   const {
@@ -146,7 +148,7 @@ export default function LoginScreen() {
                 right={
                   <TextInput.Icon
                     icon={showPassword ? 'eye-off' : 'eye'}
-                    onPress={() => setShowPassword(!showPassword)}
+                    onPress={() => setShowPassword(value => !value)}
                     color={theme.colors.onSurfaceVariant}
                   />
                 }
@@ -157,7 +159,7 @@ export default function LoginScreen() {
                   variant="ghost"
                   compact
                   fullWidth={false}
-                  onPress={() => {}}
+                  onPress={noop}
                 >
                   Forgot password?
                 </AppButton>
@@ -184,7 +186,7 @@ export default function LoginScreen() {
                 variant="ghost"
                 compact
                 fullWidth={false}
-                onPress={() => {}}
+                onPress={noop}
               >
                 Sign up
               </AppButton>
