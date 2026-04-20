@@ -3,7 +3,10 @@ import {
   CreateJobPayload,
   CreatePersonPayload,
   dataService,
+  UpdateJobPayload,
+  UpdatePersonPayload,
 } from '../services/dataService';
+import { FORBIDDEN_ERROR_MESSAGE, isForbiddenError } from '../utils/apiError';
 
 export interface Job {
   id: string | number;
@@ -37,6 +40,8 @@ interface DataState {
   isFetchingMore: boolean;
   isCreatingJob: boolean;
   isCreatingPerson: boolean;
+  isDeletingJob: boolean;
+  isDeletingPerson: boolean;
   error: string | null;
   peopleError: string | null;
   jobsError: string | null;
@@ -52,10 +57,19 @@ interface DataState {
   fetchMorePeople: () => Promise<void>;
   createJob: (payload: CreateJobPayload) => Promise<Job>;
   createPerson: (payload: CreatePersonPayload) => Promise<Person>;
+  updateJob: (id: string | number, payload: UpdateJobPayload) => Promise<Job>;
+  updatePerson: (
+    id: string | number,
+    payload: UpdatePersonPayload,
+  ) => Promise<Person>;
+  deleteJob: (id: string | number) => Promise<void>;
+  deletePerson: (id: string | number) => Promise<void>;
   uploadJobImage: (formData: FormData) => Promise<string>;
 }
 
 const getErrorMessage = (error: unknown, fallback: string) => {
+  if (isForbiddenError(error)) return FORBIDDEN_ERROR_MESSAGE;
+
   return error instanceof Error ? error.message : fallback;
 };
 
@@ -72,6 +86,8 @@ export const useDataStore = create<DataState>((set, get) => ({
   isFetchingMore: false,
   isCreatingJob: false,
   isCreatingPerson: false,
+  isDeletingJob: false,
+  isDeletingPerson: false,
   error: null,
   peopleError: null,
   jobsError: null,
@@ -212,6 +228,34 @@ export const useDataStore = create<DataState>((set, get) => ({
     }
   },
 
+  updateJob: async (id, payload) => {
+    set({ isCreatingJob: true, createError: null });
+
+    try {
+      const resp = await dataService.updateJob(id, payload);
+      const updatedJob = resp.data as Job;
+
+      set(state => ({
+        jobs: state.jobs.map(job => (job.id === id ? updatedJob : job)),
+        people: state.people.map(person =>
+          person.job?.id === id ? { ...person, job: updatedJob } : person,
+        ),
+        isCreatingJob: false,
+      }));
+
+      return updatedJob;
+    } catch (error) {
+      const message = getErrorMessage(error, 'Unable to update job');
+
+      set({
+        createError: message,
+        isCreatingJob: false,
+      });
+
+      throw new Error(message);
+    }
+  },
+
   createPerson: async payload => {
     set({ isCreatingPerson: true, createError: null });
 
@@ -232,6 +276,83 @@ export const useDataStore = create<DataState>((set, get) => ({
       set({
         createError: message,
         isCreatingPerson: false,
+      });
+
+      throw new Error(message);
+    }
+  },
+
+  updatePerson: async (id, payload) => {
+    set({ isCreatingPerson: true, createError: null });
+
+    try {
+      await dataService.updatePerson(id, payload);
+
+      set({
+        isCreatingPerson: false,
+      });
+
+      await get().fetchPeople();
+
+      const updatedPerson = get().people.find(person => person.id === id);
+
+      return (updatedPerson || { id, ...payload }) as Person;
+    } catch (error) {
+      const message = getErrorMessage(error, 'Unable to update person');
+
+      set({
+        createError: message,
+        isCreatingPerson: false,
+      });
+
+      throw new Error(message);
+    }
+  },
+
+  deleteJob: async id => {
+    set({ isDeletingJob: true, createError: null });
+
+    try {
+      await dataService.deleteJob(id);
+
+      set(state => ({
+        jobs: state.jobs.filter(job => job.id !== id),
+        people: state.people.map(person =>
+          person.job?.id === id ? { ...person, job: undefined } : person,
+        ),
+        isDeletingJob: false,
+      }));
+
+      await get().fetchPeople();
+    } catch (error) {
+      const message = getErrorMessage(error, 'Unable to delete job');
+
+      set({
+        createError: message,
+        isDeletingJob: false,
+      });
+
+      throw new Error(message);
+    }
+  },
+
+  deletePerson: async id => {
+    set({ isDeletingPerson: true, createError: null });
+
+    try {
+      await dataService.deletePerson(id);
+
+      set(state => ({
+        people: state.people.filter(person => person.id !== id),
+        totalCount: Math.max(0, state.totalCount - 1),
+        isDeletingPerson: false,
+      }));
+    } catch (error) {
+      const message = getErrorMessage(error, 'Unable to delete person');
+
+      set({
+        createError: message,
+        isDeletingPerson: false,
       });
 
       throw new Error(message);
