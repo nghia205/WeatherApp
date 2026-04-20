@@ -10,10 +10,19 @@ import {
   Animated,
   Image,
   LayoutChangeEvent,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
-import { Card, Divider, IconButton, Menu } from 'react-native-paper';
+import {
+  Card,
+  Dialog,
+  Divider,
+  IconButton,
+  Menu,
+  Modal,
+  Portal,
+} from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -30,6 +39,8 @@ import { ScreenError } from '../components/feedback/ScreenError';
 import { ScreenLoading } from '../components/feedback/ScreenLoading';
 import { useAppTheme } from '../theme/useAppTheme';
 import { useAuthStore } from '../store/useAuthStore';
+import { showErrorToast, showSuccessToast } from '../utils/showToast';
+import { isForbiddenError } from '../utils/apiError';
 
 const HEADER_FALLBACK_HEIGHT = 174;
 const LIST_FOOTER_HEIGHT = 96;
@@ -54,6 +65,16 @@ const JobMenuItem = ({ job, onSelect }: JobMenuItemProps) => {
   );
 };
 
+type DeleteTarget =
+  | {
+      type: 'person';
+      item: Person;
+    }
+  | {
+      type: 'job';
+      item: Job;
+    };
+
 type PersonCardProps = {
   item: Person;
   token: string | null;
@@ -62,6 +83,10 @@ type PersonCardProps = {
   onPrimaryContainer: string;
   surfaceVariant: string;
   onSurfaceVariant: string;
+  onEditPerson: (person: Person) => void;
+  onDeletePerson: (person: Person) => void;
+  onEditJob: (job: Job) => void;
+  onDeleteJob: (job: Job) => void;
 };
 
 const PersonCard = memo(
@@ -73,7 +98,12 @@ const PersonCard = memo(
     onPrimaryContainer,
     surfaceVariant,
     onSurfaceVariant,
+    onEditPerson,
+    onDeletePerson,
+    onEditJob,
+    onDeleteJob,
   }: PersonCardProps) => {
+    const [personMenuVisible, setPersonMenuVisible] = useState(false);
     const name = item.name || item.full_name || 'Unnamed person';
     const firstChar = name.charAt(0).toUpperCase();
     const jobImageSource = useMemo(
@@ -88,6 +118,28 @@ const PersonCard = memo(
           : undefined,
       [item.job?.image, token],
     );
+    const handleOpenMenu = useCallback(() => {
+      setPersonMenuVisible(true);
+    }, []);
+    const handleCloseMenu = useCallback(() => {
+      setPersonMenuVisible(false);
+    }, []);
+    const handleEditPerson = useCallback(() => {
+      setPersonMenuVisible(false);
+      onEditPerson(item);
+    }, [item, onEditPerson]);
+    const handleDeletePerson = useCallback(() => {
+      setPersonMenuVisible(false);
+      onDeletePerson(item);
+    }, [item, onDeletePerson]);
+    const handleEditJob = useCallback(() => {
+      if (!item.job) return;
+      onEditJob(item.job);
+    }, [item.job, onEditJob]);
+    const handleDeleteJob = useCallback(() => {
+      if (!item.job) return;
+      onDeleteJob(item.job);
+    }, [item.job, onDeleteJob]);
 
     return (
       <AppCard variant="elevated" style={styles.card}>
@@ -104,17 +156,47 @@ const PersonCard = memo(
               <AppText variant="bodyMedium" tone="secondary">
                 Age: {item.age || 'Not provided'}
               </AppText>
+              {item.email ? (
+                <AppText variant="bodySmall" tone="muted">
+                  {item.email}
+                </AppText>
+              ) : null}
             </View>
 
-            <View
-              style={[
-                styles.avatarPlaceholder,
-                { backgroundColor: primaryContainer },
-              ]}
-            >
-              <AppText weight="bold" style={{ color: onPrimaryContainer }}>
-                {firstChar}
-              </AppText>
+            <View style={styles.cardRight}>
+              <View
+                style={[
+                  styles.avatarPlaceholder,
+                  { backgroundColor: primaryContainer },
+                ]}
+              >
+                <AppText weight="bold" style={{ color: onPrimaryContainer }}>
+                  {firstChar}
+                </AppText>
+              </View>
+
+              <Menu
+                visible={personMenuVisible}
+                onDismiss={handleCloseMenu}
+                anchor={
+                  <IconButton
+                    icon="dots-vertical"
+                    size={20}
+                    onPress={handleOpenMenu}
+                  />
+                }
+              >
+                <Menu.Item
+                  leadingIcon="account-edit-outline"
+                  onPress={handleEditPerson}
+                  title="Edit person"
+                />
+                <Menu.Item
+                  leadingIcon="trash-can-outline"
+                  onPress={handleDeletePerson}
+                  title="Delete person"
+                />
+              </Menu>
             </View>
           </View>
 
@@ -150,6 +232,22 @@ const PersonCard = memo(
                       {item.job.description}
                     </AppText>
                   ) : null}
+                </View>
+                <View style={styles.jobActions}>
+                  <IconButton
+                    icon="pencil-outline"
+                    size={18}
+                    iconColor={primary}
+                    onPress={handleEditJob}
+                    style={styles.jobActionIcon}
+                  />
+                  <IconButton
+                    icon="trash-can-outline"
+                    size={18}
+                    iconColor={primary}
+                    onPress={handleDeleteJob}
+                    style={styles.jobActionIcon}
+                  />
                 </View>
               </View>
 
@@ -190,6 +288,10 @@ const DataScreen = () => {
     fetchJobs,
     fetchPeople,
     fetchMorePeople,
+    deletePerson,
+    deleteJob,
+    isDeletingPerson,
+    isDeletingJob,
   } = useDataStore(
     useShallow(state => ({
       people: state.people,
@@ -207,12 +309,18 @@ const DataScreen = () => {
       fetchJobs: state.fetchJobs,
       fetchPeople: state.fetchPeople,
       fetchMorePeople: state.fetchMorePeople,
+      deletePerson: state.deletePerson,
+      deleteJob: state.deleteJob,
+      isDeletingPerson: state.isDeletingPerson,
+      isDeletingJob: state.isDeletingJob,
     })),
   );
 
   const [localSearch, setLocalSearch] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
   const [createMenuVisible, setCreateMenuVisible] = useState(false);
+  const [jobsModalVisible, setJobsModalVisible] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [selectedJobText, setSelectedJobText] = useState('All jobs');
   const [headerHeight, setHeaderHeight] = useState(HEADER_FALLBACK_HEIGHT);
 
@@ -232,6 +340,26 @@ const DataScreen = () => {
   );
 
   const hasMorePeople = people.length < totalCount;
+  const deleteTargetName = useMemo(() => {
+    if (!deleteTarget) return '';
+
+    if (deleteTarget.type === 'person') {
+      return (
+        deleteTarget.item.name ||
+        deleteTarget.item.full_name ||
+        'Unnamed person'
+      );
+    }
+
+    return deleteTarget.item.title || deleteTarget.item.name || 'Unnamed job';
+  }, [deleteTarget]);
+  const deleteTargetDescription = useMemo(() => {
+    if (!deleteTarget) return '';
+
+    return deleteTarget.type === 'person'
+      ? 'This person will be permanently removed from Directus.'
+      : 'This job will be permanently removed from Directus. People linked to it may lose their job details.';
+  }, [deleteTarget]);
 
   useEffect(() => {
     fetchJobs();
@@ -248,17 +376,20 @@ const DataScreen = () => {
     return () => clearTimeout(handler);
   }, [localSearch, searchName, setSearchName]);
 
-  const handleJobSelect = useCallback((job?: Job) => {
-    if (job) {
-      setSelectedJobId(String(job.id));
-      setSelectedJobText(job.title || job.name || 'Selected job');
-    } else {
-      setSelectedJobId(undefined);
-      setSelectedJobText('All jobs');
-    }
+  const handleJobSelect = useCallback(
+    (job?: Job) => {
+      if (job) {
+        setSelectedJobId(String(job.id));
+        setSelectedJobText(job.title || job.name || 'Selected job');
+      } else {
+        setSelectedJobId(undefined);
+        setSelectedJobText('All jobs');
+      }
 
-    setMenuVisible(false);
-  }, [setSelectedJobId]);
+      setMenuVisible(false);
+    },
+    [setSelectedJobId],
+  );
 
   const handleEndReached = useCallback(() => {
     if (!hasMorePeople || isFetchingMore || loadMoreError) return;
@@ -266,13 +397,16 @@ const DataScreen = () => {
     fetchMorePeople();
   }, [fetchMorePeople, hasMorePeople, isFetchingMore, loadMoreError]);
 
-  const handleAnimatedHeaderLayout = useCallback((event: LayoutChangeEvent) => {
-    const nextHeaderHeight = event.nativeEvent.layout.height;
+  const handleAnimatedHeaderLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      const nextHeaderHeight = event.nativeEvent.layout.height;
 
-    if (Math.abs(nextHeaderHeight - headerHeight) > 1) {
-      setHeaderHeight(nextHeaderHeight);
-    }
-  }, [headerHeight]);
+      if (Math.abs(nextHeaderHeight - headerHeight) > 1) {
+        setHeaderHeight(nextHeaderHeight);
+      }
+    },
+    [headerHeight],
+  );
 
   const handleSelectAllJobs = useCallback(() => {
     handleJobSelect(undefined);
@@ -296,6 +430,80 @@ const DataScreen = () => {
     navigation.navigate('CreatePerson');
   }, [navigation]);
 
+  const handleOpenJobsModal = useCallback(() => {
+    setCreateMenuVisible(false);
+    setJobsModalVisible(true);
+  }, []);
+
+  const handleCloseJobsModal = useCallback(() => {
+    setJobsModalVisible(false);
+  }, []);
+
+  const handleEditPerson = useCallback(
+    (person: Person) => {
+      navigation.navigate('CreatePerson', { person });
+    },
+    [navigation],
+  );
+
+  const handleEditJob = useCallback(
+    (job: Job) => {
+      setJobsModalVisible(false);
+      navigation.navigate('CreateJob', { job });
+    },
+    [navigation],
+  );
+
+  const handleAskDeletePerson = useCallback((person: Person) => {
+    setDeleteTarget({ type: 'person', item: person });
+  }, []);
+
+  const handleAskDeleteJob = useCallback((job: Job) => {
+    setDeleteTarget({ type: 'job', item: job });
+  }, []);
+
+  const handleCancelDelete = useCallback(() => {
+    setDeleteTarget(null);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+
+    try {
+      if (deleteTarget.type === 'person') {
+        const name =
+          deleteTarget.item.name || deleteTarget.item.full_name || 'The person';
+
+        await deletePerson(deleteTarget.item.id);
+        showSuccessToast({
+          text1: 'Person deleted',
+          text2: `${name} has been removed.`,
+        });
+      } else {
+        const title =
+          deleteTarget.item.title || deleteTarget.item.name || 'The job';
+
+        await deleteJob(deleteTarget.item.id);
+        showSuccessToast({
+          text1: 'Job deleted',
+          text2: `${title} has been removed.`,
+        });
+      }
+
+      setDeleteTarget(null);
+    } catch (error) {
+      if (isForbiddenError(error)) return;
+
+      showErrorToast({
+        text1:
+          deleteTarget.type === 'person'
+            ? 'Unable to delete person'
+            : 'Unable to delete job',
+        text2: error instanceof Error ? error.message : 'Please try again.',
+      });
+    }
+  }, [deleteJob, deletePerson, deleteTarget]);
+
   const onScroll = useMemo(
     () =>
       Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
@@ -315,10 +523,18 @@ const DataScreen = () => {
           onPrimaryContainer={theme.colors.onPrimaryContainer}
           surfaceVariant={theme.colors.surfaceVariant}
           onSurfaceVariant={theme.colors.onSurfaceVariant}
+          onEditPerson={handleEditPerson}
+          onDeletePerson={handleAskDeletePerson}
+          onEditJob={handleEditJob}
+          onDeleteJob={handleAskDeleteJob}
         />
       );
     },
     [
+      handleAskDeleteJob,
+      handleAskDeletePerson,
+      handleEditJob,
+      handleEditPerson,
       theme.colors.onPrimaryContainer,
       theme.colors.onSurfaceVariant,
       theme.colors.primary,
@@ -432,6 +648,12 @@ const DataScreen = () => {
                     onPress={handleNavigateCreateJob}
                     title="Create job"
                   />
+                  <Divider />
+                  <Menu.Item
+                    leadingIcon="briefcase-edit-outline"
+                    onPress={handleOpenJobsModal}
+                    title="Manage jobs"
+                  />
                 </Menu>
               }
             />
@@ -485,6 +707,168 @@ const DataScreen = () => {
         </Animated.View>
       </View>
 
+      <Portal>
+        <Modal
+          visible={jobsModalVisible}
+          onDismiss={handleCloseJobsModal}
+          contentContainerStyle={[
+            styles.jobsModal,
+            {
+              backgroundColor: theme.colors.surface,
+              borderRadius: theme.custom.metrics.radius.xl,
+            },
+          ]}
+        >
+          <View style={styles.jobsModalHeader}>
+            <View style={styles.jobsModalTitle}>
+              <AppText variant="headlineSmall" weight="bold">
+                Manage jobs
+              </AppText>
+              <AppText variant="bodyMedium" tone="secondary">
+                Edit or remove professions from Directus.
+              </AppText>
+            </View>
+            <IconButton icon="close" onPress={handleCloseJobsModal} />
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {jobs.length === 0 ? (
+              <ScreenEmpty message="No jobs found" />
+            ) : (
+              jobs.map(job => (
+                <View
+                  key={job.id}
+                  style={[
+                    styles.manageJobCard,
+                    {
+                      backgroundColor: theme.colors.surfaceVariant,
+                      borderRadius: theme.custom.metrics.radius.md,
+                    },
+                  ]}
+                >
+                  <View style={styles.manageJobCopy}>
+                    <AppText variant="titleMedium" weight="bold">
+                      {job.title || job.name || `Job ${job.id}`}
+                    </AppText>
+                    {job.description ? (
+                      <AppText variant="bodySmall" tone="secondary">
+                        {job.description}
+                      </AppText>
+                    ) : (
+                      <AppText variant="bodySmall" tone="muted">
+                        No description
+                      </AppText>
+                    )}
+                  </View>
+
+                  <View style={styles.manageJobActions}>
+                    <IconButton
+                      icon="pencil-outline"
+                      size={20}
+                      onPress={() => handleEditJob(job)}
+                    />
+                    <IconButton
+                      icon="trash-can-outline"
+                      size={20}
+                      onPress={() => handleAskDeleteJob(job)}
+                    />
+                  </View>
+                </View>
+              ))
+            )}
+          </ScrollView>
+        </Modal>
+
+        <Dialog
+          visible={Boolean(deleteTarget)}
+          onDismiss={handleCancelDelete}
+          style={[
+            styles.deleteDialog,
+            {
+              backgroundColor: theme.colors.surface,
+              borderRadius: theme.custom.metrics.radius.md,
+            },
+          ]}
+        >
+          <Dialog.Content style={styles.deleteDialogContent}>
+            <View
+              style={[
+                styles.deleteIconBadge,
+                {
+                  backgroundColor: theme.colors.errorContainer,
+                },
+              ]}
+            >
+              <IconButton
+                icon={
+                  deleteTarget?.type === 'person'
+                    ? 'account-remove-outline'
+                    : 'briefcase-remove-outline'
+                }
+                size={28}
+                iconColor={theme.colors.onErrorContainer}
+                style={styles.deleteIcon}
+              />
+            </View>
+
+            <AppText
+              variant="headlineSmall"
+              weight="bold"
+              style={styles.deleteTitle}
+            >
+              {deleteTarget?.type === 'person'
+                ? 'Delete this person?'
+                : 'Delete this job?'}
+            </AppText>
+
+            <View
+              style={[
+                styles.deleteNamePill,
+                {
+                  backgroundColor: theme.colors.surfaceVariant,
+                },
+              ]}
+            >
+              <AppText
+                variant="labelLarge"
+                weight="bold"
+                style={styles.deleteName}
+              >
+                {deleteTargetName}
+              </AppText>
+            </View>
+
+            <AppText
+              variant="bodyMedium"
+              tone="secondary"
+              style={styles.deleteDescription}
+            >
+              {deleteTargetDescription}
+            </AppText>
+          </Dialog.Content>
+
+          <Dialog.Actions style={styles.deleteActions}>
+            <AppButton
+              variant="ghost"
+              onPress={handleCancelDelete}
+              fullWidth
+              disabled={isDeletingPerson || isDeletingJob}
+              style={styles.deleteActionButton}
+            >
+              Cancel
+            </AppButton>
+            <AppButton
+              variant="danger"
+              onPress={handleConfirmDelete}
+              fullWidth
+              loading={isDeletingPerson || isDeletingJob}
+              style={styles.deleteActionButton}
+            >
+              Delete
+            </AppButton>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </ScreenContainer>
   );
 };
@@ -550,6 +934,10 @@ const styles = StyleSheet.create({
   personName: {
     marginBottom: 2,
   },
+  cardRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
   avatarPlaceholder: {
     width: 44,
     height: 44,
@@ -576,6 +964,13 @@ const styles = StyleSheet.create({
   jobContent: {
     flex: 1,
   },
+  jobActions: {
+    flexDirection: 'row',
+    marginLeft: 4,
+  },
+  jobActionIcon: {
+    margin: 0,
+  },
   jobDescription: {
     opacity: 0.8,
     marginTop: 2,
@@ -585,6 +980,80 @@ const styles = StyleSheet.create({
     height: 160,
     marginTop: 12,
     borderRadius: 12,
+  },
+  jobsModal: {
+    margin: 20,
+    maxHeight: '82%',
+    padding: 20,
+  },
+  jobsModalHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  jobsModalTitle: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  manageJobCard: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  manageJobCopy: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  manageJobActions: {
+    flexDirection: 'row',
+  },
+  deleteDialog: {
+    marginHorizontal: 24,
+  },
+  deleteDialogContent: {
+    alignItems: 'center',
+    paddingBottom: 8,
+    paddingTop: 24,
+  },
+  deleteIconBadge: {
+    width: 60,
+    height: 60,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+  deleteIcon: {
+    margin: 0,
+  },
+  deleteTitle: {
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  deleteNamePill: {
+    borderRadius: 8,
+    maxWidth: '100%',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 14,
+  },
+  deleteName: {
+    textAlign: 'center',
+  },
+  deleteDescription: {
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  deleteActions: {
+    gap: 10,
+    paddingBottom: 18,
+    paddingHorizontal: 20,
+  },
+  deleteActionButton: {
+    flex: 1,
   },
 });
 
