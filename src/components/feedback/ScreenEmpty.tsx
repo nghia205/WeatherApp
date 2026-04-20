@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '../ui/AppText';
 
@@ -6,7 +6,7 @@ type Props = {
   message?: string;
 };
 
-export const ScreenEmpty = ({ message = 'No data available' }: Props) => {
+export const ScreenEmpty = memo(({ message = 'No data available' }: Props) => {
   return (
     <View style={styles.container}>
       <AppText variant="bodyMedium" tone="muted">
@@ -14,7 +14,7 @@ export const ScreenEmpty = ({ message = 'No data available' }: Props) => {
       </AppText>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

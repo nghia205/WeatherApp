@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { AppText } from '../ui/AppText';
@@ -8,23 +8,26 @@ type Props = {
   message?: string;
 };
 
-export const ScreenLoading = ({ message = 'Loading data...' }: Props) => {
+export const ScreenLoading = memo(({ message = 'Loading data...' }: Props) => {
   const theme = useAppTheme();
 
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color={theme.colors.primary} />
-      <AppText variant="bodyMedium" tone="secondary" style={{ marginTop: 12 }}>
+      <AppText variant="bodyMedium" tone="secondary" style={styles.message}>
         {message}
       </AppText>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  message: {
+    marginTop: 12,
   },
 });

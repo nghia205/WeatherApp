@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 import { AppText } from './AppText';
 import { useAppTheme } from '../../theme/useAppTheme';
@@ -11,18 +11,11 @@ type Props = {
   action?: React.ReactNode;
 };
 
-export const SectionHeader = ({
-  title,
-  subtitle,
-  align = 'left',
-  style,
-  action,
-}: Props) => {
-  const theme = useAppTheme();
-
-  return (
-    <View
-      style={[
+export const SectionHeader = memo(
+  ({ title, subtitle, align = 'left', style, action }: Props) => {
+    const theme = useAppTheme();
+    const containerStyle = useMemo(
+      () => [
         styles.container,
         {
           marginBottom: theme.custom.metrics.spacing.lg,
@@ -30,27 +23,40 @@ export const SectionHeader = ({
         },
         action ? styles.row : null,
         style,
-      ]}
-    >
-      <View style={action ? { flex: 1 } : undefined}>
-        <AppText variant="headlineMedium" weight="heavy">
-          {title}
-        </AppText>
-        {subtitle ? (
-          <AppText
-            variant="bodyMedium"
-            tone="secondary"
-            style={{ marginTop: theme.custom.metrics.spacing.xs }}
-          >
-            {subtitle}
-          </AppText>
-        ) : null}
-      </View>
+      ],
+      [action, align, style, theme.custom.metrics.spacing.lg],
+    );
+    const titleWrapStyle = useMemo(
+      () => (action ? styles.titleWithAction : undefined),
+      [action],
+    );
+    const subtitleStyle = useMemo(
+      () => ({ marginTop: theme.custom.metrics.spacing.xs }),
+      [theme.custom.metrics.spacing.xs],
+    );
 
-      {action}
-    </View>
-  );
-};
+    return (
+      <View style={containerStyle}>
+        <View style={titleWrapStyle}>
+          <AppText variant="headlineMedium" weight="heavy">
+            {title}
+          </AppText>
+          {subtitle ? (
+            <AppText
+              variant="bodyMedium"
+              tone="secondary"
+              style={subtitleStyle}
+            >
+              {subtitle}
+            </AppText>
+          ) : null}
+        </View>
+
+        {action}
+      </View>
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   container: {},
@@ -58,5 +64,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  titleWithAction: {
+    flex: 1,
   },
 });

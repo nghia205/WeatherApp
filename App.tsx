@@ -14,8 +14,8 @@ function App() {
 
   const isDarkMode =
     themeMode === 'dark' || (themeMode === 'system' && systemTheme === 'dark');
-
   const theme = isDarkMode ? DarkTheme : LightTheme;
+  const statusBarStyle = isDarkMode ? 'light-content' : 'dark-content';
 
   return (
     <SafeAreaProvider>
@@ -23,7 +23,7 @@ function App() {
         <StatusBar
           translucent={false}
           backgroundColor={theme.colors.background}
-          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+          barStyle={statusBarStyle}
         />
         <AppNavigator />
       </PaperProvider>

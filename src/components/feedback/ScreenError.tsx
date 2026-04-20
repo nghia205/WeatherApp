@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { InlineFeedback } from '../ui/InlineFeedback';
 
 type Props = {
@@ -7,17 +7,15 @@ type Props = {
   onRetry?: () => void;
 };
 
-export const ScreenError = ({
-  message,
-  actionLabel = 'Retry',
-  onRetry,
-}: Props) => {
-  return (
-    <InlineFeedback
-      type="error"
-      message={message}
-      actionLabel={onRetry ? actionLabel : undefined}
-      onAction={onRetry}
-    />
-  );
-};
+export const ScreenError = memo(
+  ({ message, actionLabel = 'Retry', onRetry }: Props) => {
+    return (
+      <InlineFeedback
+        type="error"
+        message={message}
+        actionLabel={onRetry ? actionLabel : undefined}
+        onAction={onRetry}
+      />
+    );
+  },
+);

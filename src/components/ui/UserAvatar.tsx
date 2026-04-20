@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import type { ImageSourcePropType } from 'react-native';
 import { StyleSheet, View } from 'react-native';
 import { Avatar } from 'react-native-paper';
@@ -12,51 +12,51 @@ type Props = {
   outlined?: boolean;
 };
 
-export const UserAvatar = ({
-  name,
-  uri,
-  source,
-  size = 120,
-  outlined = false,
-}: Props) => {
-  const theme = useAppTheme();
-  const label = (name?.trim()?.[0] || 'U').toUpperCase();
-  const imageSource = source || (uri ? { uri } : undefined);
-
-  if (!outlined) {
-    return imageSource ? (
-      <Avatar.Image size={size} source={imageSource} />
-    ) : (
-      <Avatar.Text
-        size={size}
-        label={label}
-        style={{ backgroundColor: theme.colors.primary }}
-      />
+export const UserAvatar = memo(
+  ({ name, uri, source, size = 120, outlined = false }: Props) => {
+    const theme = useAppTheme();
+    const label = useMemo(
+      () => (name?.trim()?.[0] || 'U').toUpperCase(),
+      [name],
     );
-  }
-
-  return (
-    <View
-      style={[
+    const imageSource = useMemo(
+      () => source || (uri ? { uri } : undefined),
+      [source, uri],
+    );
+    const textAvatarStyle = useMemo(
+      () => ({ backgroundColor: theme.colors.primary }),
+      [theme.colors.primary],
+    );
+    const outlineStyle = useMemo(
+      () => [
         styles.outline,
         {
           borderColor: theme.custom.semantic.border.accent,
           borderRadius: size,
         },
-      ]}
-    >
-      {imageSource ? (
+      ],
+      [size, theme.custom.semantic.border.accent],
+    );
+
+    if (!outlined) {
+      return imageSource ? (
         <Avatar.Image size={size} source={imageSource} />
       ) : (
-        <Avatar.Text
-          size={size}
-          label={label}
-          style={{ backgroundColor: theme.colors.primary }}
-        />
-      )}
-    </View>
-  );
-};
+        <Avatar.Text size={size} label={label} style={textAvatarStyle} />
+      );
+    }
+
+    return (
+      <View style={outlineStyle}>
+        {imageSource ? (
+          <Avatar.Image size={size} source={imageSource} />
+        ) : (
+          <Avatar.Text size={size} label={label} style={textAvatarStyle} />
+        )}
+      </View>
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   outline: {

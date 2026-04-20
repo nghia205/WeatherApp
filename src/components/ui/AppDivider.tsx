@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 import { useAppTheme } from '../../theme/useAppTheme';
 
@@ -8,12 +8,11 @@ type Props = {
   style?: ViewStyle | ViewStyle[];
 };
 
-export const AppDivider = ({ vertical = false, size = 1, style }: Props) => {
-  const theme = useAppTheme();
-
-  return (
-    <View
-      style={[
+export const AppDivider = memo(
+  ({ vertical = false, size = 1, style }: Props) => {
+    const theme = useAppTheme();
+    const dividerStyle = useMemo(
+      () => [
         vertical
           ? {
               width: size,
@@ -21,7 +20,7 @@ export const AppDivider = ({ vertical = false, size = 1, style }: Props) => {
             }
           : {
               height: size,
-              width: '100%',
+              width: '100%' as const,
             },
         {
           backgroundColor: theme.custom.semantic.divider,
@@ -29,10 +28,13 @@ export const AppDivider = ({ vertical = false, size = 1, style }: Props) => {
         },
         styles.base,
         style,
-      ]}
-    />
-  );
-};
+      ],
+      [size, style, theme.custom.semantic.divider, vertical],
+    );
+
+    return <View style={dividerStyle} />;
+  },
+);
 
 const styles = StyleSheet.create({
   base: {},
