@@ -28,6 +28,7 @@ export const dataService = {
         fields: '*,job.*',
         page,
         limit,
+        sort: '-id',
         filter: JSON.stringify(filterObj),
         meta: 'filter_count',
       },

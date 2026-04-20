@@ -311,27 +311,19 @@ const DataScreen = () => {
   const renderFooter = () => {
     if (people.length === 0) return null;
 
-    if (isFetchingMore) {
-      return (
-        <View style={styles.listFooter}>
+    return (
+      <View style={styles.listFooter}>
+        {isFetchingMore ? (
           <ScreenLoading message="Loading more people..." />
-        </View>
-      );
-    }
-
-    if (loadMoreError) {
-      return (
-        <View style={styles.listFooter}>
+        ) : loadMoreError ? (
           <ScreenError
             message={loadMoreError}
             actionLabel="Retry load more"
             onRetry={fetchMorePeople}
           />
-        </View>
-      );
-    }
-
-    return <View style={styles.listFooter} />;
+        ) : null}
+      </View>
+    );
   };
 
   return (
@@ -374,7 +366,7 @@ const DataScreen = () => {
             maxToRenderPerBatch={6}
             updateCellsBatchingPeriod={40}
             windowSize={7}
-            removeClippedSubviews
+            maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
           />
         )}
       </View>
