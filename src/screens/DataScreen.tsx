@@ -1,22 +1,20 @@
-import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
-  Alert,
   Animated,
   Image,
   LayoutChangeEvent,
-  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
-import {
-  Card,
-  Divider,
-  IconButton,
-  Menu,
-  Modal,
-  Portal,
-  TextInput,
-} from 'react-native-paper';
+import { Card, Divider, IconButton, Menu } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useDataStore, Job, Person } from '../store/useDataStore';
@@ -172,6 +170,7 @@ const PersonCard = memo(
 
 const DataScreen = () => {
   const theme = useAppTheme();
+  const navigation = useNavigation<any>();
   const token = useAuthStore(state => state.token);
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -213,12 +212,9 @@ const DataScreen = () => {
 
   const [localSearch, setLocalSearch] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
+  const [createMenuVisible, setCreateMenuVisible] = useState(false);
   const [selectedJobText, setSelectedJobText] = useState('All jobs');
   const [headerHeight, setHeaderHeight] = useState(HEADER_FALLBACK_HEIGHT);
-
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newAge, setNewAge] = useState('');
 
   const clampedScrollY = useMemo(
     () => Animated.diffClamp(scrollY, 0, headerHeight),
@@ -236,10 +232,6 @@ const DataScreen = () => {
   );
 
   const hasMorePeople = people.length < totalCount;
-  const handleSaveProfile = () => {
-    Alert.alert('Profile creation is only a UI preview.');
-    setModalVisible(false);
-  };
 
   useEffect(() => {
     fetchJobs();
@@ -256,7 +248,7 @@ const DataScreen = () => {
     return () => clearTimeout(handler);
   }, [localSearch, searchName, setSearchName]);
 
-  const handleJobSelect = (job?: Job) => {
+  const handleJobSelect = useCallback((job?: Job) => {
     if (job) {
       setSelectedJobId(String(job.id));
       setSelectedJobText(job.title || job.name || 'Selected job');
@@ -266,25 +258,43 @@ const DataScreen = () => {
     }
 
     setMenuVisible(false);
-  };
+  }, [setSelectedJobId]);
 
-  const handleEndReached = () => {
+  const handleEndReached = useCallback(() => {
     if (!hasMorePeople || isFetchingMore || loadMoreError) return;
 
     fetchMorePeople();
-  };
+  }, [fetchMorePeople, hasMorePeople, isFetchingMore, loadMoreError]);
 
-  const handleAnimatedHeaderLayout = (event: LayoutChangeEvent) => {
+  const handleAnimatedHeaderLayout = useCallback((event: LayoutChangeEvent) => {
     const nextHeaderHeight = event.nativeEvent.layout.height;
 
     if (Math.abs(nextHeaderHeight - headerHeight) > 1) {
       setHeaderHeight(nextHeaderHeight);
     }
-  };
+  }, [headerHeight]);
 
-  const handleSelectAllJobs = () => {
+  const handleSelectAllJobs = useCallback(() => {
     handleJobSelect(undefined);
-  };
+  }, [handleJobSelect]);
+
+  const handleOpenCreateMenu = useCallback(() => {
+    setCreateMenuVisible(true);
+  }, []);
+
+  const handleCloseCreateMenu = useCallback(() => {
+    setCreateMenuVisible(false);
+  }, []);
+
+  const handleNavigateCreateJob = useCallback(() => {
+    setCreateMenuVisible(false);
+    navigation.navigate('CreateJob');
+  }, [navigation]);
+
+  const handleNavigateCreatePerson = useCallback(() => {
+    setCreateMenuVisible(false);
+    navigation.navigate('CreatePerson');
+  }, [navigation]);
 
   const onScroll = useMemo(
     () =>
@@ -294,21 +304,31 @@ const DataScreen = () => {
     [scrollY],
   );
 
-  const renderPerson = ({ item }: { item: Person }) => {
-    return (
-      <PersonCard
-        item={item}
-        token={token}
-        primary={theme.colors.primary}
-        primaryContainer={theme.colors.primaryContainer}
-        onPrimaryContainer={theme.colors.onPrimaryContainer}
-        surfaceVariant={theme.colors.surfaceVariant}
-        onSurfaceVariant={theme.colors.onSurfaceVariant}
-      />
-    );
-  };
+  const renderPerson = useCallback(
+    ({ item }: { item: Person }) => {
+      return (
+        <PersonCard
+          item={item}
+          token={token}
+          primary={theme.colors.primary}
+          primaryContainer={theme.colors.primaryContainer}
+          onPrimaryContainer={theme.colors.onPrimaryContainer}
+          surfaceVariant={theme.colors.surfaceVariant}
+          onSurfaceVariant={theme.colors.onSurfaceVariant}
+        />
+      );
+    },
+    [
+      theme.colors.onPrimaryContainer,
+      theme.colors.onSurfaceVariant,
+      theme.colors.primary,
+      theme.colors.primaryContainer,
+      theme.colors.surfaceVariant,
+      token,
+    ],
+  );
 
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (people.length === 0) return null;
 
     return (
@@ -324,7 +344,7 @@ const DataScreen = () => {
         ) : null}
       </View>
     );
-  };
+  }, [fetchMorePeople, isFetchingMore, loadMoreError, people.length]);
 
   return (
     <ScreenContainer paddingHorizontal={0}>
@@ -390,14 +410,29 @@ const DataScreen = () => {
               title="Community"
               style={styles.sectionHeader}
               action={
-                <AppButton
-                  variant="primary"
-                  icon="plus"
-                  onPress={() => setModalVisible(true)}
-                  fullWidth={false}
+                <Menu
+                  visible={createMenuVisible}
+                  onDismiss={handleCloseCreateMenu}
+                  anchor={
+                    <AppButton
+                      variant="primary"
+                      icon="plus"
+                      onPress={handleOpenCreateMenu}
+                      fullWidth={false}
+                    >
+                      Add
+                    </AppButton>
+                  }
                 >
-                  Add
-                </AppButton>
+                  <Menu.Item
+                    onPress={handleNavigateCreatePerson}
+                    title="Create person"
+                  />
+                  <Menu.Item
+                    onPress={handleNavigateCreateJob}
+                    title="Create job"
+                  />
+                </Menu>
               }
             />
           </View>
@@ -450,70 +485,6 @@ const DataScreen = () => {
         </Animated.View>
       </View>
 
-      <Portal>
-        <Modal
-          visible={modalVisible}
-          onDismiss={() => setModalVisible(false)}
-          contentContainerStyle={[
-            styles.modalCard,
-            {
-              backgroundColor: theme.colors.surface,
-              borderRadius: theme.custom.metrics.radius.xl,
-            },
-          ]}
-        >
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <AppText variant="headlineSmall" weight="bold">
-              Add a new profile
-            </AppText>
-
-            <AppText
-              variant="bodyMedium"
-              tone="muted"
-              style={styles.modalDescription}
-            >
-              Enter the profile details below.
-            </AppText>
-
-            <AppTextInput
-              label="Name"
-              value={newName}
-              onChangeText={setNewName}
-            />
-
-            <AppTextInput
-              label="Age"
-              value={newAge}
-              onChangeText={setNewAge}
-              keyboardType="numeric"
-            />
-
-            <AppTextInput
-              label="Job (preview only)"
-              editable={false}
-              right={<TextInput.Icon icon="menu-down" />}
-            />
-
-            <View style={styles.modalActions}>
-              <AppButton
-                variant="ghost"
-                onPress={() => setModalVisible(false)}
-                fullWidth={false}
-              >
-                Cancel
-              </AppButton>
-
-              <AppButton
-                variant="primary"
-                onPress={handleSaveProfile}
-                fullWidth={false}
-              >
-                Save profile
-              </AppButton>
-            </View>
-          </ScrollView>
-        </Modal>
-      </Portal>
     </ScreenContainer>
   );
 };
@@ -614,21 +585,6 @@ const styles = StyleSheet.create({
     height: 160,
     marginTop: 12,
     borderRadius: 12,
-  },
-  modalCard: {
-    padding: 24,
-    margin: 20,
-    maxHeight: '80%',
-  },
-  modalDescription: {
-    marginBottom: 20,
-    marginTop: 6,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 12,
-    gap: 8,
   },
 });
 
