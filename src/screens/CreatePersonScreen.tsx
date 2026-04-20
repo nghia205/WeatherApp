@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Divider, IconButton, Menu, TextInput } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useShallow } from 'zustand/react/shallow';
@@ -7,9 +7,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { AppButton } from '../components/ui/AppButton';
 import { AppCard } from '../components/ui/AppCard';
+import { AppText } from '../components/ui/AppText';
 import { AppTextInput } from '../components/ui/AppTextInput';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { Job, useDataStore } from '../store/useDataStore';
+import { showErrorToast, showSuccessToast } from '../utils/showToast';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const getJobLabel = (job?: Job) => {
   if (!job) return 'No job selected';
@@ -57,7 +61,11 @@ const CreatePersonScreen = () => {
   const trimmedName = name.trim();
   const trimmedAge = age.trim();
   const trimmedEmail = email.trim();
-  const canSubmit = trimmedName.length > 0 && !isCreatingPerson;
+  const isEmailValid = !trimmedEmail || EMAIL_PATTERN.test(trimmedEmail);
+  const emailError =
+    trimmedEmail && !isEmailValid ? 'Email format is invalid.' : undefined;
+  const canSubmit =
+    trimmedName.length > 0 && isEmailValid && !isCreatingPerson;
 
   const selectedJobLabel = useMemo(
     () => getJobLabel(selectedJob),
@@ -92,14 +100,28 @@ const CreatePersonScreen = () => {
 
   const handleCreatePerson = useCallback(async () => {
     if (!trimmedName) {
-      Alert.alert('Missing name', 'Enter a person name before saving.');
+      showErrorToast({
+        text1: 'Missing name',
+        text2: 'Enter a person name before saving.',
+      });
       return;
     }
 
     const parsedAge = trimmedAge ? Number(trimmedAge) : undefined;
 
     if (trimmedAge && Number.isNaN(parsedAge)) {
-      Alert.alert('Invalid age', 'Age must be a number.');
+      showErrorToast({
+        text1: 'Invalid age',
+        text2: 'Age must be a number.',
+      });
+      return;
+    }
+
+    if (!isEmailValid) {
+      showErrorToast({
+        text1: 'Invalid email',
+        text2: 'Enter a valid email address before saving.',
+      });
       return;
     }
 
@@ -111,22 +133,24 @@ const CreatePersonScreen = () => {
         job: selectedJob?.id,
       });
 
-      Alert.alert('Person created', 'The person has been saved.', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      showSuccessToast({
+        text1: 'Person created',
+        text2: selectedJob
+          ? `${trimmedName} has been saved with ${getJobLabel(selectedJob)}.`
+          : `${trimmedName} has been saved.`,
+      });
+      navigation.goBack();
     } catch (error) {
-      Alert.alert(
-        'Unable to create person',
-        error instanceof Error ? error.message : 'Please try again.',
-      );
+      showErrorToast({
+        text1: 'Unable to create person',
+        text2: error instanceof Error ? error.message : 'Please try again.',
+      });
     }
   }, [
     createPerson,
     navigation,
-    selectedJob?.id,
+    selectedJob,
+    isEmailValid,
     trimmedAge,
     trimmedEmail,
     trimmedName,
@@ -173,11 +197,17 @@ const CreatePersonScreen = () => {
               label="Email"
               value={email}
               onChangeText={setEmail}
+              error={Boolean(emailError)}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="done"
             />
+            {emailError ? (
+              <AppText variant="bodySmall" tone="danger" style={styles.error}>
+                {emailError}
+              </AppText>
+            ) : null}
 
             <Menu
               visible={jobMenuVisible}
@@ -232,6 +262,10 @@ const styles = StyleSheet.create({
   },
   form: {
     padding: 20,
+  },
+  error: {
+    marginTop: -10,
+    marginBottom: 14,
   },
   actions: {
     flexDirection: 'row',

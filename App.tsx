@@ -2,11 +2,11 @@ import React from 'react';
 import { StatusBar, useColorScheme } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import { DarkTheme, LightTheme } from './src/theme';
 import { useThemeStore } from './src/store/useThemeStore';
+import { AppToast } from './src/components/feedback/AppToast';
 
 function App() {
   const systemTheme = useColorScheme();
@@ -26,8 +26,8 @@ function App() {
           barStyle={statusBarStyle}
         />
         <AppNavigator />
+        <AppToast />
       </PaperProvider>
-      <Toast />
     </SafeAreaProvider>
   );
 }

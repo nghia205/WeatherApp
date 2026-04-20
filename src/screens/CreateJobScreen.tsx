@@ -1,6 +1,5 @@
 import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -25,6 +24,7 @@ import { AppTextInput } from '../components/ui/AppTextInput';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { useDataStore } from '../store/useDataStore';
 import { useAppTheme } from '../theme/useAppTheme';
+import { showErrorToast, showSuccessToast } from '../utils/showToast';
 
 const DEFAULT_MIME_TYPE = 'image/jpeg';
 
@@ -114,26 +114,29 @@ const CreateJobScreen = () => {
       if (response.didCancel) return;
 
       if (response.errorCode) {
-        Alert.alert(
-          'Unable to pick image',
-          response.errorMessage || response.errorCode,
-        );
+        showErrorToast({
+          text1: 'Unable to pick image',
+          text2: response.errorMessage || response.errorCode,
+        });
         return;
       }
 
       const asset = response.assets?.[0];
 
       if (!asset?.uri) {
-        Alert.alert('Unable to pick image', 'No image was returned.');
+        showErrorToast({
+          text1: 'Unable to pick image',
+          text2: 'No image was returned.',
+        });
         return;
       }
 
       setSelectedImage(asset);
     } catch (error) {
-      Alert.alert(
-        'Unable to pick image',
-        error instanceof Error ? error.message : 'Please try again.',
-      );
+      showErrorToast({
+        text1: 'Unable to pick image',
+        text2: error instanceof Error ? error.message : 'Please try again.',
+      });
     }
   }, []);
 
@@ -143,7 +146,10 @@ const CreateJobScreen = () => {
 
   const handleCreateJob = useCallback(async () => {
     if (!trimmedTitle) {
-      Alert.alert('Missing title', 'Enter a job title before saving.');
+      showErrorToast({
+        text1: 'Missing title',
+        text2: 'Enter a job title before saving.',
+      });
       return;
     }
 
@@ -161,17 +167,18 @@ const CreateJobScreen = () => {
         image: uploadedImageId,
       });
 
-      Alert.alert('Job created', 'The job has been saved.', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      showSuccessToast({
+        text1: 'Job created',
+        text2: uploadedImageId
+          ? 'The job and image have been saved.'
+          : 'The job has been saved.',
+      });
+      navigation.goBack();
     } catch (error) {
-      Alert.alert(
-        'Unable to create job',
-        error instanceof Error ? error.message : 'Please try again.',
-      );
+      showErrorToast({
+        text1: 'Unable to create job',
+        text2: error instanceof Error ? error.message : 'Please try again.',
+      });
     }
   }, [
     createJob,
