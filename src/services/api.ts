@@ -6,6 +6,8 @@ import axios, {
 } from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 import { getValidToken } from '../utils/getValidToken';
+import { FORBIDDEN_ERROR_MESSAGE } from '../utils/apiError';
+import { showErrorToast } from '../utils/showToast';
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -46,6 +48,13 @@ const withInterceptors = (axiosInstance: AxiosInstance) => {
         } catch (refreshError) {
           return Promise.reject(refreshError);
         }
+      }
+
+      if (error.response?.status === 403) {
+        showErrorToast({
+          text1: 'Không có quyền',
+          text2: FORBIDDEN_ERROR_MESSAGE,
+        });
       }
 
       return Promise.reject(error);

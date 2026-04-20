@@ -6,12 +6,25 @@ export type CreateJobPayload = {
   image?: string;
 };
 
+export type UpdateJobPayload = Partial<{
+  title: string;
+  description: string | null;
+  image: string | null;
+}>;
+
 export type CreatePersonPayload = {
   name: string;
   age?: number;
   email?: string;
   job?: string | number;
 };
+
+export type UpdatePersonPayload = Partial<{
+  name: string;
+  age: number | null;
+  email: string | null;
+  job: string | number | null;
+}>;
 
 export const dataService = {
   fetchJobs: async () => {
@@ -61,8 +74,24 @@ export const dataService = {
     const response = await apiMain.post('/items/job', payload);
     return response.data;
   },
+  updateJob: async (id: string | number, payload: UpdateJobPayload) => {
+    const response = await apiMain.patch(`/items/job/${id}`, payload);
+    return response.data;
+  },
+  deleteJob: async (id: string | number) => {
+    const response = await apiMain.delete(`/items/job/${id}`);
+    return response.data;
+  },
   createPerson: async (payload: CreatePersonPayload) => {
     const response = await apiMain.post('/items/people', payload);
+    return response.data;
+  },
+  updatePerson: async (id: string | number, payload: UpdatePersonPayload) => {
+    const response = await apiMain.patch(`/items/people/${id}`, payload);
+    return response.data;
+  },
+  deletePerson: async (id: string | number) => {
+    const response = await apiMain.delete(`/items/people/${id}`);
     return response.data;
   },
 };

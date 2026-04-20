@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Divider, IconButton, Menu, TextInput } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useShallow } from 'zustand/react/shallow';
 
 import { ScreenContainer } from '../components/ScreenContainer';
@@ -10,8 +10,9 @@ import { AppCard } from '../components/ui/AppCard';
 import { AppText } from '../components/ui/AppText';
 import { AppTextInput } from '../components/ui/AppTextInput';
 import { SectionHeader } from '../components/ui/SectionHeader';
-import { Job, useDataStore } from '../store/useDataStore';
+import { Job, Person, useDataStore } from '../store/useDataStore';
 import { showErrorToast, showSuccessToast } from '../utils/showToast';
+import { isForbiddenError } from '../utils/apiError';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -36,12 +37,16 @@ const JobMenuItem = memo(({ job, onSelect }: JobMenuItemProps) => {
 
 const CreatePersonScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute<any>();
+  const editingPerson = route.params?.person as Person | undefined;
+  const isEditing = Boolean(editingPerson);
   const {
     jobs,
     isLoadingJobs,
     isCreatingPerson,
     fetchJobs,
     createPerson,
+    updatePerson,
   } = useDataStore(
     useShallow(state => ({
       jobs: state.jobs,
@@ -49,13 +54,20 @@ const CreatePersonScreen = () => {
       isCreatingPerson: state.isCreatingPerson,
       fetchJobs: state.fetchJobs,
       createPerson: state.createPerson,
+      updatePerson: state.updatePerson,
     })),
   );
 
-  const [name, setName] = useState('');
-  const [age, setAge] = useState('');
-  const [email, setEmail] = useState('');
-  const [selectedJob, setSelectedJob] = useState<Job | undefined>();
+  const [name, setName] = useState(
+    editingPerson?.name || editingPerson?.full_name || '',
+  );
+  const [age, setAge] = useState(
+    editingPerson?.age ? String(editingPerson.age) : '',
+  );
+  const [email, setEmail] = useState(editingPerson?.email || '');
+  const [selectedJob, setSelectedJob] = useState<Job | undefined>(
+    editingPerson?.job,
+  );
   const [jobMenuVisible, setJobMenuVisible] = useState(false);
 
   const trimmedName = name.trim();
@@ -126,6 +138,22 @@ const CreatePersonScreen = () => {
     }
 
     try {
+      if (isEditing && editingPerson) {
+        await updatePerson(editingPerson.id, {
+          name: trimmedName,
+          age: parsedAge ?? null,
+          email: trimmedEmail || null,
+          job: selectedJob?.id ?? null,
+        });
+
+        showSuccessToast({
+          text1: 'Person updated',
+          text2: `${trimmedName} has been updated.`,
+        });
+        navigation.goBack();
+        return;
+      }
+
       await createPerson({
         name: trimmedName,
         age: parsedAge,
@@ -141,19 +169,26 @@ const CreatePersonScreen = () => {
       });
       navigation.goBack();
     } catch (error) {
+      if (isForbiddenError(error)) return;
+
       showErrorToast({
-        text1: 'Unable to create person',
+        text1: isEditing
+          ? 'Unable to update person'
+          : 'Unable to create person',
         text2: error instanceof Error ? error.message : 'Please try again.',
       });
     }
   }, [
     createPerson,
+    editingPerson,
+    isEditing,
     navigation,
     selectedJob,
     isEmailValid,
     trimmedAge,
     trimmedEmail,
     trimmedName,
+    updatePerson,
   ]);
 
   const jobRightIcon = useMemo(
@@ -168,8 +203,12 @@ const CreatePersonScreen = () => {
         contentContainerStyle={styles.content}
       >
         <SectionHeader
-          title="Create person"
-          subtitle="Save a person and attach an existing job."
+          title={isEditing ? 'Edit person' : 'Create person'}
+          subtitle={
+            isEditing
+              ? 'Update person details in Directus.'
+              : 'Save a person and attach an existing job.'
+          }
           action={
             <IconButton icon="arrow-left" size={24} onPress={handleBack} />
           }
@@ -234,7 +273,12 @@ const CreatePersonScreen = () => {
             </Menu>
 
             <View style={styles.actions}>
-              <AppButton variant="ghost" onPress={handleBack} fullWidth={false}>
+              <AppButton
+                variant="ghost"
+                onPress={handleBack}
+                fullWidth
+                style={styles.actionButton}
+              >
                 Cancel
               </AppButton>
 
@@ -243,9 +287,10 @@ const CreatePersonScreen = () => {
                 onPress={handleCreatePerson}
                 disabled={!canSubmit}
                 loading={isCreatingPerson || isLoadingJobs}
-                fullWidth={false}
+                fullWidth
+                style={styles.actionButton}
               >
-                Save person
+                {isEditing ? 'Update person' : 'Save person'}
               </AppButton>
             </View>
           </View>
@@ -269,8 +314,10 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
+    gap: 10,
+  },
+  actionButton: {
+    flex: 1,
   },
 });
 

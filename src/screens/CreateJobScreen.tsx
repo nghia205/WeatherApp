@@ -8,7 +8,7 @@ import {
   NativeScrollEvent,
 } from 'react-native';
 import { IconButton } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import {
   Asset,
   ImageLibraryOptions,
@@ -22,11 +22,14 @@ import { AppCard } from '../components/ui/AppCard';
 import { AppText } from '../components/ui/AppText';
 import { AppTextInput } from '../components/ui/AppTextInput';
 import { SectionHeader } from '../components/ui/SectionHeader';
-import { useDataStore } from '../store/useDataStore';
+import { Job, useDataStore } from '../store/useDataStore';
 import { useAppTheme } from '../theme/useAppTheme';
 import { showErrorToast, showSuccessToast } from '../utils/showToast';
+import { useAuthStore } from '../store/useAuthStore';
+import { isForbiddenError } from '../utils/apiError';
 
 const DEFAULT_MIME_TYPE = 'image/jpeg';
+const DIRECTUS_ASSET_URL = 'https://silvatek.vn:8080/assets';
 
 const IMAGE_PICKER_OPTIONS: ImageLibraryOptions = {
   mediaType: 'photo',
@@ -67,24 +70,35 @@ const buildFileFormData = (asset: Asset) => {
 
 const CreateJobScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute<any>();
   const theme = useAppTheme();
+  const token = useAuthStore(state => state.token);
   const scrollRef = useRef<ScrollView>(null);
   const lastScrollYRef = useRef(0);
+  const editingJob = route.params?.job as Job | undefined;
+  const isEditing = Boolean(editingJob);
 
-  const { createJob, uploadJobImage, isCreatingJob } = useDataStore(
+  const { createJob, updateJob, uploadJobImage, isCreatingJob } = useDataStore(
     useShallow(state => ({
       createJob: state.createJob,
+      updateJob: state.updateJob,
       uploadJobImage: state.uploadJobImage,
       isCreatingJob: state.isCreatingJob,
     })),
   );
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [title, setTitle] = useState(
+    editingJob?.title || editingJob?.name || '',
+  );
+  const [description, setDescription] = useState(
+    editingJob?.description || '',
+  );
   const [selectedImage, setSelectedImage] = useState<Asset | null>(null);
+  const [shouldRemoveImage, setShouldRemoveImage] = useState(false);
 
   const trimmedTitle = title.trim();
   const canSubmit = trimmedTitle.length > 0 && !isCreatingJob;
+  const hasExistingImage = Boolean(editingJob?.image) && !shouldRemoveImage;
 
   const selectedImageName = useMemo(
     () => (selectedImage ? getAssetFileName(selectedImage) : 'No image chosen'),
@@ -92,8 +106,25 @@ const CreateJobScreen = () => {
   );
 
   const imagePreviewSource = useMemo(
-    () => (selectedImage?.uri ? { uri: selectedImage.uri } : undefined),
-    [selectedImage?.uri],
+    () => {
+      if (selectedImage?.uri) {
+        return { uri: selectedImage.uri };
+      }
+
+      if (hasExistingImage && editingJob?.image) {
+        return token
+          ? {
+              uri: `${DIRECTUS_ASSET_URL}/${editingJob.image}`,
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          : { uri: `${DIRECTUS_ASSET_URL}/${editingJob.image}` };
+      }
+
+      return undefined;
+    },
+    [editingJob?.image, hasExistingImage, selectedImage?.uri, token],
   );
 
   const handleBack = useCallback(() => {
@@ -132,6 +163,7 @@ const CreateJobScreen = () => {
       }
 
       setSelectedImage(asset);
+      setShouldRemoveImage(false);
     } catch (error) {
       showErrorToast({
         text1: 'Unable to pick image',
@@ -142,7 +174,8 @@ const CreateJobScreen = () => {
 
   const handleClearImage = useCallback(() => {
     setSelectedImage(null);
-  }, []);
+    setShouldRemoveImage(Boolean(editingJob?.image));
+  }, [editingJob?.image]);
 
   const handleCreateJob = useCallback(async () => {
     if (!trimmedTitle) {
@@ -161,6 +194,23 @@ const CreateJobScreen = () => {
         uploadedImageId = await uploadJobImage(formData);
       }
 
+      if (isEditing && editingJob) {
+        await updateJob(editingJob.id, {
+          title: trimmedTitle,
+          description: description.trim() || null,
+          image: uploadedImageId || (shouldRemoveImage ? null : undefined),
+        });
+
+        showSuccessToast({
+          text1: 'Job updated',
+          text2: uploadedImageId
+            ? 'The job and image have been updated.'
+            : 'The job has been updated.',
+        });
+        navigation.goBack();
+        return;
+      }
+
       await createJob({
         title: trimmedTitle,
         description: description.trim() || undefined,
@@ -175,17 +225,23 @@ const CreateJobScreen = () => {
       });
       navigation.goBack();
     } catch (error) {
+      if (isForbiddenError(error)) return;
+
       showErrorToast({
-        text1: 'Unable to create job',
+        text1: isEditing ? 'Unable to update job' : 'Unable to create job',
         text2: error instanceof Error ? error.message : 'Please try again.',
       });
     }
   }, [
     createJob,
     description,
+    editingJob,
+    isEditing,
     navigation,
     selectedImage,
+    shouldRemoveImage,
     trimmedTitle,
+    updateJob,
     uploadJobImage,
   ]);
 
@@ -204,8 +260,12 @@ const CreateJobScreen = () => {
         contentContainerStyle={styles.content}
       >
         <SectionHeader
-          title="Create job"
-          subtitle="Save a profession and optional image to Directus."
+          title={isEditing ? 'Edit job' : 'Create job'}
+          subtitle={
+            isEditing
+              ? 'Update profession details in Directus.'
+              : 'Save a profession and optional image to Directus.'
+          }
           action={
             <IconButton icon="arrow-left" size={24} onPress={handleBack} />
           }
@@ -256,11 +316,23 @@ const CreateJobScreen = () => {
                 >
                   Remove
                 </AppButton>
+              ) : hasExistingImage ? (
+                <AppButton
+                  variant="ghost"
+                  onPress={handleClearImage}
+                  fullWidth={false}
+                >
+                  Remove
+                </AppButton>
               ) : null}
             </View>
 
             <AppText variant="bodySmall" tone="muted" style={styles.fileName}>
-              {selectedImageName}
+              {shouldRemoveImage
+                ? 'Image will be removed.'
+                : hasExistingImage && !selectedImage
+                ? 'Current image will be kept.'
+                : selectedImageName}
             </AppText>
 
             {imagePreviewSource ? (
@@ -283,7 +355,7 @@ const CreateJobScreen = () => {
                 loading={isCreatingJob}
                 fullWidth={false}
               >
-                Save job
+                {isEditing ? 'Update job' : 'Save job'}
               </AppButton>
             </View>
           </View>
