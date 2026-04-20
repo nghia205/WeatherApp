@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { dataService } from '../services/dataService';
+import {
+  CreateJobPayload,
+  CreatePersonPayload,
+  dataService,
+} from '../services/dataService';
 
 export interface Job {
   id: string | number;
@@ -31,9 +35,12 @@ interface DataState {
   isLoadingPeople: boolean;
   isLoadingJobs: boolean;
   isFetchingMore: boolean;
+  isCreatingJob: boolean;
+  isCreatingPerson: boolean;
   error: string | null;
   peopleError: string | null;
   jobsError: string | null;
+  createError: string | null;
   loadMoreError: string | null;
 
   setPage: (page: number) => void;
@@ -43,6 +50,9 @@ interface DataState {
   fetchJobs: () => Promise<void>;
   fetchPeople: () => Promise<void>;
   fetchMorePeople: () => Promise<void>;
+  createJob: (payload: CreateJobPayload) => Promise<Job>;
+  createPerson: (payload: CreatePersonPayload) => Promise<Person>;
+  uploadJobImage: (formData: FormData) => Promise<string>;
 }
 
 const getErrorMessage = (error: unknown, fallback: string) => {
@@ -60,9 +70,12 @@ export const useDataStore = create<DataState>((set, get) => ({
   isLoadingPeople: false,
   isLoadingJobs: false,
   isFetchingMore: false,
+  isCreatingJob: false,
+  isCreatingPerson: false,
   error: null,
   peopleError: null,
   jobsError: null,
+  createError: null,
   loadMoreError: null,
 
   setPage: page => {
@@ -162,6 +175,66 @@ export const useDataStore = create<DataState>((set, get) => ({
         loadMoreError: getErrorMessage(error, 'Unable to load more people'),
         isFetchingMore: false,
       });
+    }
+  },
+
+  uploadJobImage: async formData => {
+    try {
+      const resp = await dataService.uploadFile(formData);
+      return resp.data.id;
+    } catch (error) {
+      throw new Error(getErrorMessage(error, 'Unable to upload job image'));
+    }
+  },
+
+  createJob: async payload => {
+    set({ isCreatingJob: true, createError: null });
+
+    try {
+      const resp = await dataService.createJob(payload);
+      const createdJob = resp.data as Job;
+
+      set(state => ({
+        jobs: [createdJob, ...state.jobs],
+        isCreatingJob: false,
+      }));
+
+      return createdJob;
+    } catch (error) {
+      const message = getErrorMessage(error, 'Unable to create job');
+
+      set({
+        createError: message,
+        isCreatingJob: false,
+      });
+
+      throw new Error(message);
+    }
+  },
+
+  createPerson: async payload => {
+    set({ isCreatingPerson: true, createError: null });
+
+    try {
+      const resp = await dataService.createPerson(payload);
+      const createdPerson = resp.data as Person;
+
+      set({
+        isCreatingPerson: false,
+      });
+
+      await get().fetchPeople();
+
+      return createdPerson;
+    } catch (error) {
+      const message = getErrorMessage(error, 'Unable to create person');
+
+      set({
+        createError: message,
+        isCreatingPerson: false,
+      });
+
+      throw new Error(message);
     }
   },
 }));
