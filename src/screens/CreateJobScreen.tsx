@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Image,
   ScrollView,
@@ -90,9 +90,7 @@ const CreateJobScreen = () => {
   const [title, setTitle] = useState(
     editingJob?.title || editingJob?.name || '',
   );
-  const [description, setDescription] = useState(
-    editingJob?.description || '',
-  );
+  const [description, setDescription] = useState(editingJob?.description || '');
   const [selectedImage, setSelectedImage] = useState<Asset | null>(null);
   const [shouldRemoveImage, setShouldRemoveImage] = useState(false);
 
@@ -105,27 +103,24 @@ const CreateJobScreen = () => {
     [selectedImage],
   );
 
-  const imagePreviewSource = useMemo(
-    () => {
-      if (selectedImage?.uri) {
-        return { uri: selectedImage.uri };
-      }
+  const imagePreviewSource = useMemo(() => {
+    if (selectedImage?.uri) {
+      return { uri: selectedImage.uri };
+    }
 
-      if (hasExistingImage && editingJob?.image) {
-        return token
-          ? {
-              uri: `${DIRECTUS_ASSET_URL}/${editingJob.image}`,
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          : { uri: `${DIRECTUS_ASSET_URL}/${editingJob.image}` };
-      }
+    if (hasExistingImage && editingJob?.image) {
+      return token
+        ? {
+            uri: `${DIRECTUS_ASSET_URL}/${editingJob.image}`,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        : { uri: `${DIRECTUS_ASSET_URL}/${editingJob.image}` };
+    }
 
-      return undefined;
-    },
-    [editingJob?.image, hasExistingImage, selectedImage?.uri, token],
-  );
+    return undefined;
+  }, [editingJob?.image, hasExistingImage, selectedImage?.uri, token]);
 
   const handleBack = useCallback(() => {
     navigation.goBack();
@@ -405,4 +400,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default memo(CreateJobScreen);
+export default CreateJobScreen;

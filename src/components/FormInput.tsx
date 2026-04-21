@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React from 'react';
 import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 import { TextInputProps } from 'react-native-paper';
 
@@ -35,4 +35,4 @@ function FormInputComponent<T extends FieldValues>({
   );
 }
 
-export const FormInput = memo(FormInputComponent) as typeof FormInputComponent;
+export const FormInput = FormInputComponent;

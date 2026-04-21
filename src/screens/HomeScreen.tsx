@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { IconButton } from 'react-native-paper';
 import { useShallow } from 'zustand/react/shallow';
@@ -33,18 +33,22 @@ type QuickCityButtonProps = {
   onSelect: (city: string) => void;
 };
 
-const QuickCityButton = ({ city, onSelect }: QuickCityButtonProps) => {
+const QuickCityButton = memo(({ city, onSelect }: QuickCityButtonProps) => {
+  const handlePress = useCallback(() => {
+    onSelect(city);
+  }, [city, onSelect]);
+
   return (
     <AppButton
       variant="secondary"
       compact
       fullWidth={false}
-      onPress={() => onSelect(city)}
+      onPress={handlePress}
     >
       {city}
     </AppButton>
   );
-};
+});
 
 type MetricTileProps = {
   icon: string;
@@ -54,30 +58,26 @@ type MetricTileProps = {
   backgroundColor: string;
 };
 
-const MetricTile = ({
-  icon,
-  iconColor,
-  label,
-  value,
-  backgroundColor,
-}: MetricTileProps) => {
-  return (
-    <View style={[styles.metricTile, { backgroundColor }]}>
-      <IconButton
-        icon={icon}
-        iconColor={iconColor}
-        size={26}
-        style={styles.metricIcon}
-      />
-      <AppText variant="titleMedium" weight="bold">
-        {value}
-      </AppText>
-      <AppText variant="labelMedium" tone="muted">
-        {label}
-      </AppText>
-    </View>
-  );
-};
+const MetricTile = memo(
+  ({ icon, iconColor, label, value, backgroundColor }: MetricTileProps) => {
+    return (
+      <View style={[styles.metricTile, { backgroundColor }]}>
+        <IconButton
+          icon={icon}
+          iconColor={iconColor}
+          size={26}
+          style={styles.metricIcon}
+        />
+        <AppText variant="titleMedium" weight="bold">
+          {value}
+        </AppText>
+        <AppText variant="labelMedium" tone="muted">
+          {label}
+        </AppText>
+      </View>
+    );
+  },
+);
 
 const HomeScreen = () => {
   const [cityInput, setCityInput] = useState('');
@@ -97,21 +97,33 @@ const HomeScreen = () => {
     promptForNotificationPermission();
   }, [promptForNotificationPermission]);
 
-  const handleSearch = (city?: string) => {
-    const nextCity = city ?? cityInput;
+  const handleSearch = useCallback(
+    (city?: string) => {
+      const nextCity = city ?? cityInput;
+      const trimmedCity = nextCity.trim();
 
-    if (nextCity.trim()) {
+      if (!trimmedCity) return;
+
       Keyboard.dismiss();
       setCityInput(nextCity);
-      fetchWeather(nextCity.trim());
-    }
-  };
+      fetchWeather(trimmedCity);
+    },
+    [cityInput, fetchWeather],
+  );
 
-  const handleSubmitSearch = () => {
+  const handleSubmitSearch = useCallback(() => {
     handleSearch();
-  };
+  }, [handleSearch]);
 
   const weatherIcon = weather?.weather?.[0]?.icon;
+  const weatherIconSource = useMemo(
+    () => ({ uri: getWeatherIconUrl(weatherIcon) }),
+    [weatherIcon],
+  );
+  const emptyWeatherIconSource = useMemo(
+    () => ({ uri: getWeatherIconUrl() }),
+    [],
+  );
   const weatherDescription = weather?.weather?.[0]?.description;
   const locationTitle = location
     ? `${location.name}${location.country ? `, ${location.country}` : ''}`
@@ -206,7 +218,7 @@ const HomeScreen = () => {
                   </View>
 
                   <Image
-                    source={{ uri: getWeatherIconUrl(weatherIcon) }}
+                    source={weatherIconSource}
                     style={styles.weatherIcon}
                     resizeMode="contain"
                   />
@@ -297,7 +309,7 @@ const HomeScreen = () => {
             ]}
           >
             <Image
-              source={{ uri: getWeatherIconUrl() }}
+              source={emptyWeatherIconSource}
               style={styles.emptyIcon}
               resizeMode="contain"
             />

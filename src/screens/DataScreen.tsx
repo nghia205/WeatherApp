@@ -56,14 +56,81 @@ type JobMenuItemProps = {
   onSelect: (job: Job) => void;
 };
 
-const JobMenuItem = ({ job, onSelect }: JobMenuItemProps) => {
+const JobMenuItem = memo(({ job, onSelect }: JobMenuItemProps) => {
+  const handlePress = useCallback(() => {
+    onSelect(job);
+  }, [job, onSelect]);
+
   return (
     <Menu.Item
-      onPress={() => onSelect(job)}
+      onPress={handlePress}
       title={job.title || job.name || `Job ${job.id}`}
     />
   );
+});
+
+type ManageJobRowProps = {
+  job: Job;
+  surfaceVariant: string;
+  borderRadius: number;
+  onEdit: (job: Job) => void;
+  onDelete: (job: Job) => void;
 };
+
+const ManageJobRow = memo(
+  ({
+    job,
+    surfaceVariant,
+    borderRadius,
+    onEdit,
+    onDelete,
+  }: ManageJobRowProps) => {
+    const handleEdit = useCallback(() => {
+      onEdit(job);
+    }, [job, onEdit]);
+    const handleDelete = useCallback(() => {
+      onDelete(job);
+    }, [job, onDelete]);
+    const containerStyle = useMemo(
+      () => [
+        styles.manageJobCard,
+        {
+          backgroundColor: surfaceVariant,
+          borderRadius,
+        },
+      ],
+      [borderRadius, surfaceVariant],
+    );
+
+    return (
+      <View style={containerStyle}>
+        <View style={styles.manageJobCopy}>
+          <AppText variant="titleMedium" weight="bold">
+            {job.title || job.name || `Job ${job.id}`}
+          </AppText>
+          {job.description ? (
+            <AppText variant="bodySmall" tone="secondary">
+              {job.description}
+            </AppText>
+          ) : (
+            <AppText variant="bodySmall" tone="muted">
+              No description
+            </AppText>
+          )}
+        </View>
+
+        <View style={styles.manageJobActions}>
+          <IconButton icon="pencil-outline" size={20} onPress={handleEdit} />
+          <IconButton
+            icon="trash-can-outline"
+            size={20}
+            onPress={handleDelete}
+          />
+        </View>
+      </View>
+    );
+  },
+);
 
 type DeleteTarget =
   | {
@@ -140,6 +207,26 @@ const PersonCard = memo(
       if (!item.job) return;
       onDeleteJob(item.job);
     }, [item.job, onDeleteJob]);
+    const avatarTextStyle = useMemo(
+      () => ({ color: onPrimaryContainer }),
+      [onPrimaryContainer],
+    );
+    const avatarStyle = useMemo(
+      () => [styles.avatarPlaceholder, { backgroundColor: primaryContainer }],
+      [primaryContainer],
+    );
+    const jobContainerStyle = useMemo(
+      () => [styles.jobContainer, { backgroundColor: surfaceVariant }],
+      [surfaceVariant],
+    );
+    const jobTitleStyle = useMemo(
+      () => ({ color: onSurfaceVariant }),
+      [onSurfaceVariant],
+    );
+    const jobDescriptionStyle = useMemo(
+      () => [styles.jobDescription, { color: onSurfaceVariant }],
+      [onSurfaceVariant],
+    );
 
     return (
       <AppCard variant="elevated" style={styles.card}>
@@ -164,13 +251,8 @@ const PersonCard = memo(
             </View>
 
             <View style={styles.cardRight}>
-              <View
-                style={[
-                  styles.avatarPlaceholder,
-                  { backgroundColor: primaryContainer },
-                ]}
-              >
-                <AppText weight="bold" style={{ color: onPrimaryContainer }}>
+              <View style={avatarStyle}>
+                <AppText weight="bold" style={avatarTextStyle}>
                   {firstChar}
                 </AppText>
               </View>
@@ -203,9 +285,7 @@ const PersonCard = memo(
           <AppDivider style={styles.divider} />
 
           {item.job ? (
-            <View
-              style={[styles.jobContainer, { backgroundColor: surfaceVariant }]}
-            >
+            <View style={jobContainerStyle}>
               <View style={styles.jobRow}>
                 <IconButton
                   icon="briefcase-outline"
@@ -217,18 +297,12 @@ const PersonCard = memo(
                   <AppText
                     variant="labelLarge"
                     weight="bold"
-                    style={{ color: onSurfaceVariant }}
+                    style={jobTitleStyle}
                   >
                     {item.job.title || item.job.name || 'No job title'}
                   </AppText>
                   {item.job.description ? (
-                    <AppText
-                      variant="bodySmall"
-                      style={[
-                        styles.jobDescription,
-                        { color: onSurfaceVariant },
-                      ]}
-                    >
+                    <AppText variant="bodySmall" style={jobDescriptionStyle}>
                       {item.job.description}
                     </AppText>
                   ) : null}
@@ -411,6 +485,14 @@ const DataScreen = () => {
   const handleSelectAllJobs = useCallback(() => {
     handleJobSelect(undefined);
   }, [handleJobSelect]);
+
+  const handleOpenFilterMenu = useCallback(() => {
+    setMenuVisible(true);
+  }, []);
+
+  const handleCloseFilterMenu = useCallback(() => {
+    setMenuVisible(false);
+  }, []);
 
   const handleOpenCreateMenu = useCallback(() => {
     setCreateMenuVisible(true);
@@ -670,11 +752,11 @@ const DataScreen = () => {
 
             <Menu
               visible={menuVisible}
-              onDismiss={() => setMenuVisible(false)}
+              onDismiss={handleCloseFilterMenu}
               anchor={
                 <AppButton
                   variant="secondary"
-                  onPress={() => setMenuVisible(true)}
+                  onPress={handleOpenFilterMenu}
                   fullWidth={false}
                   icon="chevron-down"
                   loading={isLoadingJobs}
@@ -736,44 +818,14 @@ const DataScreen = () => {
               <ScreenEmpty message="No jobs found" />
             ) : (
               jobs.map(job => (
-                <View
+                <ManageJobRow
                   key={job.id}
-                  style={[
-                    styles.manageJobCard,
-                    {
-                      backgroundColor: theme.colors.surfaceVariant,
-                      borderRadius: theme.custom.metrics.radius.md,
-                    },
-                  ]}
-                >
-                  <View style={styles.manageJobCopy}>
-                    <AppText variant="titleMedium" weight="bold">
-                      {job.title || job.name || `Job ${job.id}`}
-                    </AppText>
-                    {job.description ? (
-                      <AppText variant="bodySmall" tone="secondary">
-                        {job.description}
-                      </AppText>
-                    ) : (
-                      <AppText variant="bodySmall" tone="muted">
-                        No description
-                      </AppText>
-                    )}
-                  </View>
-
-                  <View style={styles.manageJobActions}>
-                    <IconButton
-                      icon="pencil-outline"
-                      size={20}
-                      onPress={() => handleEditJob(job)}
-                    />
-                    <IconButton
-                      icon="trash-can-outline"
-                      size={20}
-                      onPress={() => handleAskDeleteJob(job)}
-                    />
-                  </View>
-                </View>
+                  job={job}
+                  surfaceVariant={theme.colors.surfaceVariant}
+                  borderRadius={theme.custom.metrics.radius.md}
+                  onEdit={handleEditJob}
+                  onDelete={handleAskDeleteJob}
+                />
               ))
             )}
           </ScrollView>

@@ -318,4 +318,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default memo(CreatePersonScreen);
+export default CreatePersonScreen;

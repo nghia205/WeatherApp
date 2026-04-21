@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -49,29 +49,41 @@ export default function LoginScreen() {
     defaultValues: { email: 'user1@gmail.com', password: 'User1@1327' },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
-    try {
-      const responseData = await authService.login({
-        email: data.email,
-        password: data.password,
-      });
+  const onSubmit = useCallback(
+    async (data: LoginFormValues) => {
+      try {
+        const responseData = await authService.login({
+          email: data.email,
+          password: data.password,
+        });
 
-      const loginData = responseData.data;
+        const loginData = responseData.data;
 
-      login({
-        user: loginData,
-        token: loginData.access_token,
-        tokenExpires: loginData.expires,
-        refreshToken: loginData.refresh_token,
-      });
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Sign-in failed',
-        text2: 'The email or password is incorrect',
-      });
-    }
-  };
+        login({
+          user: loginData,
+          token: loginData.access_token,
+          tokenExpires: loginData.expires,
+          refreshToken: loginData.refresh_token,
+        });
+      } catch (error) {
+        Toast.show({
+          type: 'error',
+          text1: 'Sign-in failed',
+          text2: 'The email or password is incorrect',
+        });
+      }
+    },
+    [login],
+  );
+
+  const handleTogglePassword = useCallback(() => {
+    setShowPassword(value => !value);
+  }, []);
+
+  const handleSignIn = useMemo(
+    () => handleSubmit(onSubmit),
+    [handleSubmit, onSubmit],
+  );
 
   return (
     <SafeAreaView
@@ -148,7 +160,7 @@ export default function LoginScreen() {
                 right={
                   <TextInput.Icon
                     icon={showPassword ? 'eye-off' : 'eye'}
-                    onPress={() => setShowPassword(value => !value)}
+                    onPress={handleTogglePassword}
                     color={theme.colors.onSurfaceVariant}
                   />
                 }
@@ -167,7 +179,7 @@ export default function LoginScreen() {
 
               <AppButton
                 variant="primary"
-                onPress={handleSubmit(onSubmit)}
+                onPress={handleSignIn}
                 loading={isSubmitting}
                 disabled={isSubmitting}
                 style={styles.submitButton}
