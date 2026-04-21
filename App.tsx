@@ -7,6 +7,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { DarkTheme, LightTheme } from './src/theme';
 import { useThemeStore } from './src/store/useThemeStore';
 import { AppToast } from './src/components/feedback/AppToast';
+import { PushNotificationProvider } from './src/context/PushNotificationContext';
 
 function App() {
   const systemTheme = useColorScheme();
@@ -25,8 +26,10 @@ function App() {
           backgroundColor={theme.colors.background}
           barStyle={statusBarStyle}
         />
-        <AppNavigator />
-        <AppToast />
+        <PushNotificationProvider>
+          <AppNavigator />
+          <AppToast />
+        </PushNotificationProvider>
       </PaperProvider>
     </SafeAreaProvider>
   );

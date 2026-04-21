@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { IconButton } from 'react-native-paper';
 import { useShallow } from 'zustand/react/shallow';
@@ -14,6 +14,7 @@ import { SectionHeader } from '../components/ui/SectionHeader';
 import { ScreenError } from '../components/feedback/ScreenError';
 import { ScreenLoading } from '../components/feedback/ScreenLoading';
 import { useAppTheme } from '../theme/useAppTheme';
+import { usePushNotificationPrompt } from '../context/PushNotificationContext';
 
 const QUICK_CITIES = ['Hanoi', 'Da Nang', 'Ho Chi Minh City'];
 
@@ -80,6 +81,7 @@ const MetricTile = ({
 
 const HomeScreen = () => {
   const [cityInput, setCityInput] = useState('');
+  const { promptForNotificationPermission } = usePushNotificationPrompt();
   const { weather, location, loading, error, fetchWeather } = useWeatherStore(
     useShallow(state => ({
       weather: state.weather,
@@ -90,6 +92,10 @@ const HomeScreen = () => {
     })),
   );
   const theme = useAppTheme();
+
+  useEffect(() => {
+    promptForNotificationPermission();
+  }, [promptForNotificationPermission]);
 
   const handleSearch = (city?: string) => {
     const nextCity = city ?? cityInput;
