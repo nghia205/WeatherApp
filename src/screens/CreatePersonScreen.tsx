@@ -76,8 +76,7 @@ const CreatePersonScreen = () => {
   const isEmailValid = !trimmedEmail || EMAIL_PATTERN.test(trimmedEmail);
   const emailError =
     trimmedEmail && !isEmailValid ? 'Email format is invalid.' : undefined;
-  const canSubmit =
-    trimmedName.length > 0 && isEmailValid && !isCreatingPerson;
+  const canSubmit = trimmedName.length > 0 && isEmailValid && !isCreatingPerson;
 
   const selectedJobLabel = useMemo(
     () => getJobLabel(selectedJob),
@@ -136,7 +135,6 @@ const CreatePersonScreen = () => {
       });
       return;
     }
-
     try {
       if (isEditing && editingPerson) {
         await updatePerson(editingPerson.id, {
@@ -150,23 +148,22 @@ const CreatePersonScreen = () => {
           text1: 'Person updated',
           text2: `${trimmedName} has been updated.`,
         });
-        navigation.goBack();
-        return;
+      } else {
+        await createPerson({
+          name: trimmedName,
+          age: parsedAge,
+          email: trimmedEmail || undefined,
+          job: selectedJob?.id,
+        });
+
+        showSuccessToast({
+          text1: 'Person created',
+          text2: selectedJob
+            ? `${trimmedName} has been saved with ${getJobLabel(selectedJob)}.`
+            : `${trimmedName} has been saved.`,
+        });
       }
 
-      await createPerson({
-        name: trimmedName,
-        age: parsedAge,
-        email: trimmedEmail || undefined,
-        job: selectedJob?.id,
-      });
-
-      showSuccessToast({
-        text1: 'Person created',
-        text2: selectedJob
-          ? `${trimmedName} has been saved with ${getJobLabel(selectedJob)}.`
-          : `${trimmedName} has been saved.`,
-      });
       navigation.goBack();
     } catch (error) {
       if (isForbiddenError(error)) return;
